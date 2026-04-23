@@ -1,0 +1,6 @@
+-- Local seed data. Runs on `supabase db reset`. Keep this idempotent so it can
+-- be re-run against any dev DB without blowing up.
+--
+-- The launch brand set lives in migrations/0001_init.sql so it is applied in
+-- production too. Put local-only demo data here (e.g. fake drafts, test
+-- users) once those tables exist.
