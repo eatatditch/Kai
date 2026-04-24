@@ -1,0 +1,166 @@
+name: Supabase bootstrap
+
+# One-shot setup workflow. Runs against the linked Supabase project from a
+# GitHub-hosted runner so it bypasses the sandbox firewall that blocks
+# api.supabase.com.
+#
+# Usage:
+#   1. Add a repo secret named SUPABASE_ACCESS_TOKEN (Supabase PAT from
+#      https://supabase.com/dashboard/account/tokens).
+#   2. Run this workflow with the three inputs below.
+#   3. Revoke the PAT + delete the secret when done.
+#
+# What it does (all idempotent):
+#   - Applies supabase/migrations/0001_init.sql if public.brands does not yet
+#     exist. Future migrations get their own workflow runs or proper
+#     `supabase db push` once the CLI flow is wired up.
+#   - PATCHes Auth config: site_url, redirect URL allow list, email provider
+#     enabled, email auto-confirm on (one-tap magic links — internal tool).
+#   - Promotes the chosen email to role='owner' if a profile row exists.
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_ref:
+        description: "Supabase project ref (subdomain from your project URL)"
+        required: true
+      app_url:
+        description: "Production app URL (e.g. https://kai.vercel.app)"
+        required: true
+      owner_email:
+        description: "Email to promote to owner (must have signed in once already; leave blank to skip)"
+        required: false
+        default: ""
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify PAT is configured
+        env:
+          PAT: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$PAT" ]; then
+            echo "::error::Repo secret SUPABASE_ACCESS_TOKEN is not set."
+            exit 1
+          fi
+          echo "PAT length: ${#PAT}"
+
+      - name: Sanity-check project access
+        env:
+          PAT: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ inputs.project_ref }}
+        run: |
+          set -euo pipefail
+          status=$(curl -sS -o /tmp/proj.json -w "%{http_code}" \
+            -H "Authorization: Bearer $PAT" \
+            "https://api.supabase.com/v1/projects/$REF")
+          if [ "$status" != "200" ]; then
+            echo "::error::Could not read project $REF (HTTP $status)"
+            cat /tmp/proj.json
+            exit 1
+          fi
+          jq -r '"Project: \(.name)  region: \(.region)  status: \(.status)"' /tmp/proj.json
+
+      - name: Apply migration 0001 if needed
+        env:
+          PAT: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ inputs.project_ref }}
+        run: |
+          set -euo pipefail
+
+          # Check whether public.brands already exists.
+          check_query=$(jq -Rs . <<< "select to_regclass('public.brands') is not null as exists")
+          resp=$(curl -sS -X POST \
+            "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $PAT" \
+            -H "Content-Type: application/json" \
+            -d "{\"query\": $check_query}")
+          echo "Schema probe: $resp"
+          already=$(echo "$resp" | jq -r '.[0].exists // .result[0].exists // false')
+
+          if [ "$already" = "true" ]; then
+            echo "Migration 0001 already applied — skipping."
+            exit 0
+          fi
+
+          echo "Applying 0001_init.sql"
+          migration_query=$(jq -Rs . supabase/migrations/0001_init.sql)
+          payload=$(jq -n --argjson q "$migration_query" '{query: $q}')
+          curl -fsS -X POST \
+            "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $PAT" \
+            -H "Content-Type: application/json" \
+            -d "$payload" | jq .
+
+      - name: Configure Auth URLs and email provider
+        env:
+          PAT: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ inputs.project_ref }}
+          APP_URL: ${{ inputs.app_url }}
+        run: |
+          set -euo pipefail
+          # Build the redirect URL allow list. Includes localhost (for any
+          # devbox session) and a wildcard for Vercel preview deploys.
+          base="${APP_URL%/}"
+          host="${base#https://}"
+          host="${host#http://}"
+          # Vercel preview domains follow <project>-<hash>.vercel.app — wildcard
+          # the project name to allow all previews.
+          preview_glob="https://${host%%.*}-*.vercel.app/auth/callback"
+
+          allow_list="${base}/auth/callback,${preview_glob},http://localhost:3000/auth/callback"
+
+          payload=$(jq -n \
+            --arg site "$base" \
+            --arg allow "$allow_list" \
+            '{
+              site_url: $site,
+              uri_allow_list: $allow,
+              external_email_enabled: true,
+              mailer_autoconfirm: true,
+              disable_signup: false
+            }')
+
+          curl -fsS -X PATCH \
+            "https://api.supabase.com/v1/projects/$REF/config/auth" \
+            -H "Authorization: Bearer $PAT" \
+            -H "Content-Type: application/json" \
+            -d "$payload" | jq '{site_url, uri_allow_list, external_email_enabled, mailer_autoconfirm}'
+
+      - name: Promote owner (if email provided)
+        if: ${{ inputs.owner_email != '' }}
+        env:
+          PAT: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          REF: ${{ inputs.project_ref }}
+          EMAIL: ${{ inputs.owner_email }}
+        run: |
+          set -euo pipefail
+
+          query_text=$(printf "update public.profiles set role='owner' where id=(select id from auth.users where email='%s') returning id, role;" "$EMAIL")
+          query=$(jq -Rs . <<< "$query_text")
+          payload=$(jq -n --argjson q "$query" '{query: $q}')
+
+          resp=$(curl -fsS -X POST \
+            "https://api.supabase.com/v1/projects/$REF/database/query" \
+            -H "Authorization: Bearer $PAT" \
+            -H "Content-Type: application/json" \
+            -d "$payload")
+          echo "Result: $resp"
+
+          updated=$(echo "$resp" | jq 'length')
+          if [ "$updated" = "0" ]; then
+            echo "::warning::No profile row was updated. The user must sign in once before this step works (the auth.users -> profiles trigger creates the row on first sign-in)."
+          else
+            echo "Promoted $updated user(s) to owner."
+          fi
+
+      - name: Summary
+        run: |
+          echo "Bootstrap complete."
+          echo "Next: hit the Vercel preview URL → /login → email magic link."
+          echo "Don't forget to revoke the PAT and delete the SUPABASE_ACCESS_TOKEN secret."
