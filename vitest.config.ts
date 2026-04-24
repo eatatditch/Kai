@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": resolve(__dirname, "."),
+      // `server-only` is a Next.js runtime-guard package; in tests we stub it.
+      "server-only": resolve(__dirname, "test/server-only.ts"),
     },
   },
   test: {
