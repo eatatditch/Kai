@@ -23,9 +23,15 @@ export type BrandSummary = {
 export async function getAccessibleBrands(): Promise<BrandSummary[]> {
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
+    .eq("id", user.id)
     .single();
 
   if (profile?.role === "owner") {

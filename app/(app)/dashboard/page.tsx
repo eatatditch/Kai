@@ -8,10 +8,13 @@ export default async function DashboardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, role")
-    .single();
+  const { data: profile } = user
+    ? await supabase
+        .from("profiles")
+        .select("full_name, role")
+        .eq("id", user.id)
+        .single()
+    : { data: null };
 
   const brands = await getAccessibleBrands();
   const activeBrand = await getActiveBrand(brands);
