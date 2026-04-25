@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { createClient } from "@/lib/supabase/server";
 import { getAccessibleBrands, getActiveBrand } from "@/lib/active-brand";
 
@@ -43,13 +45,27 @@ export default async function DashboardPage() {
             {brands.length} brand{brands.length === 1 ? "" : "s"} accessible ·
             role: {profile?.role ?? "—"}
           </p>
+          <div className="mt-4 flex gap-3">
+            <Link
+              href="/drafts/new"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              + New draft
+            </Link>
+            <Link
+              href="/drafts"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold text-foreground hover:bg-muted"
+            >
+              View drafts
+            </Link>
+          </div>
         </section>
       )}
 
       <section className="rounded-xl border border-dashed border-border p-5 text-sm text-muted-foreground">
-        <p className="font-medium text-foreground">What&rsquo;s next</p>
+        <p className="font-medium text-foreground">Roadmap</p>
         <ul className="mt-2 list-inside list-disc space-y-1">
-          <li>Phase 1 — AI content generator + brand voice scoring</li>
+          <li>Phase 1 — AI content generator + brand voice scoring (current)</li>
           <li>Phase 2 — approval workflow + content calendar</li>
           <li>Phase 3 — asset library with Drive sync</li>
         </ul>

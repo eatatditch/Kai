@@ -27,6 +27,15 @@ export function AppNav({
           </span>
         </Link>
 
+        <nav className="ml-2 hidden items-center gap-1 sm:flex">
+          <Link
+            href="/drafts"
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Drafts
+          </Link>
+        </nav>
+
         <div className="ml-auto flex items-center gap-2">
           {activeBrand && <BrandSwitcher brands={brands} active={activeBrand} />}
           <form action={signOut}>
