@@ -43,7 +43,12 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
-  if (!user && !isPublic) {
+  // Magic-link callbacks may land at any path with a ?code=... if Supabase's
+  // Site URL fallback strips the configured /auth/callback path. Let those
+  // through so the page can forward the code to the callback handler.
+  const hasAuthCode = request.nextUrl.searchParams.has("code");
+
+  if (!user && !isPublic && !hasAuthCode) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", pathname);
