@@ -22,7 +22,6 @@ export default async function AppLayout({
     supabase.from("profiles").select("role").eq("id", user.id).single(),
     getAccessibleBrands(),
   ]);
-  console.log("DEBUG: profile query result", { profile, profileError, userId: user.id });
   const activeBrand = await getActiveBrand(brands);
 
   return (
@@ -34,6 +33,9 @@ export default async function AppLayout({
         userRole={profile?.role ?? null}
       />
       <main className="mx-auto w-full max-w-screen-md flex-1 px-4 py-6">
+        <div style={{ fontSize: "12px", marginBottom: "20px", padding: "10px", backgroundColor: "#f0f0f0" }}>
+          DEBUG: profile={JSON.stringify(profile)} | error={JSON.stringify(profileError)} | userId={user.id}
+        </div>
         {children}
       </main>
     </div>
