@@ -18,7 +18,7 @@ export default async function AppLayout({
   // Middleware should already have redirected, but belt-and-suspenders.
   if (!user) redirect("/login");
 
-  const [{ data: profile, error: profileError }, brands] = await Promise.all([
+  const [{ data: profile }, brands] = await Promise.all([
     supabase.from("profiles").select("role").eq("id", user.id).single(),
     getAccessibleBrands(),
   ]);
@@ -33,9 +33,6 @@ export default async function AppLayout({
         userRole={profile?.role ?? null}
       />
       <main className="mx-auto w-full max-w-screen-md flex-1 px-4 py-6">
-        <div style={{ fontSize: "12px", marginBottom: "20px", padding: "10px", backgroundColor: "#f0f0f0" }}>
-          DEBUG: profile={JSON.stringify(profile)} | error={JSON.stringify(profileError)} | userId={user.id}
-        </div>
         {children}
       </main>
     </div>
