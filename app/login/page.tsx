@@ -25,7 +25,7 @@ export default async function LoginPage({
             Welcome back.
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            We&rsquo;ll email you a one-tap sign-in link.
+            Sign in with your work email and password.
           </p>
         </header>
 

@@ -5,15 +5,18 @@ import { signOut } from "@/app/login/actions";
 import { BrandSwitcher } from "./brand-switcher";
 
 import type { BrandSummary } from "@/lib/active-brand";
+import type { AppRole } from "@/types/database";
 
 export function AppNav({
   brands,
   activeBrand,
   userEmail,
+  userRole,
 }: {
   brands: BrandSummary[];
   activeBrand: BrandSummary | null;
   userEmail: string;
+  userRole: AppRole | null;
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
@@ -34,6 +37,14 @@ export function AppNav({
           >
             Drafts
           </Link>
+          {userRole === "owner" && (
+            <Link
+              href="/admin/users"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Team
+            </Link>
+          )}
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
