@@ -86,11 +86,59 @@ export function buildScorerSystem(
   ];
 }
 
+export type SeriesContext = {
+  name: string;
+  description: string;
+  guidelines: string | null;
+};
+
 export function buildDraftUserMessage(
   prompt: string,
   format: ContentFormat,
+  series?: SeriesContext | null,
 ): string {
-  return `Brief from the team:\n${prompt.trim()}\n\nWrite ONE ${FORMAT_LABELS[format]}. Just the copy, nothing else.`;
+  const parts: string[] = [];
+  if (series) {
+    parts.push(`# Content series: ${series.name}`);
+    parts.push(series.description);
+    if (series.guidelines) {
+      parts.push("");
+      parts.push(`Series guidelines: ${series.guidelines}`);
+    }
+    parts.push("");
+  }
+  parts.push(`Brief from the team:\n${prompt.trim()}`);
+  parts.push("");
+  parts.push(
+    `Write ONE ${FORMAT_LABELS[format]}${series ? ` that fits the ${series.name} series` : ""}. Just the copy, nothing else.`,
+  );
+  return parts.join("\n");
+}
+
+export function buildIdeationUserMessage(args: {
+  brandName: string;
+  series?: SeriesContext | null;
+  hint?: string | null;
+  count: number;
+}): string {
+  const parts: string[] = [];
+  parts.push(`# Brand: ${args.brandName}`);
+  if (args.series) {
+    parts.push(`# Series: ${args.series.name}`);
+    parts.push(args.series.description);
+    if (args.series.guidelines) {
+      parts.push(`Series guidelines: ${args.series.guidelines}`);
+    }
+  }
+  if (args.hint) {
+    parts.push("");
+    parts.push(`Direction from the team: ${args.hint.trim()}`);
+  }
+  parts.push("");
+  parts.push(
+    `Generate ${args.count} content ideas${args.series ? ` for the ${args.series.name} series` : ""}. Each idea is a one-sentence concept the team can use as a brief. No numbering, no preamble — just the ideas.`,
+  );
+  return parts.join("\n");
 }
 
 export function buildScoreUserMessage(

@@ -32,11 +32,31 @@ export function AppNav({
 
         <nav className="ml-2 hidden items-center gap-1 sm:flex">
           <Link
+            href="/ideas"
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Ideas
+          </Link>
+          <Link
             href="/drafts"
             className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
           >
             Drafts
           </Link>
+          <Link
+            href="/calendar"
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Calendar
+          </Link>
+          {(userRole === "owner" || userRole === "manager") && (
+            <Link
+              href="/admin/series"
+              className="rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              Series
+            </Link>
+          )}
           {userRole === "owner" && (
             <Link
               href="/admin/users"

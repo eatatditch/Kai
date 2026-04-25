@@ -9,6 +9,7 @@ import {
   loadVoiceRules,
   renderVoiceRulesForPrompt,
 } from "@/lib/ai/voice-rules";
+import { getSeriesById } from "@/lib/series";
 
 import type { ContentFormat, Json } from "@/types/database";
 
@@ -31,6 +32,7 @@ export type GeneratedDraft = {
   voiceScore: number;
   voiceSummary: string;
   voiceIssues: VoiceIssue[];
+  seriesName: string | null;
   createdAt: string;
 };
 
@@ -48,6 +50,8 @@ export async function generateAndSaveDraft(
   const brandSlug = String(formData.get("brand") ?? "").trim();
   const format = String(formData.get("format") ?? "") as ContentFormat;
   const prompt = String(formData.get("prompt") ?? "").trim();
+  const seriesIdRaw = String(formData.get("series_id") ?? "").trim();
+  const seriesId = seriesIdRaw.length > 0 ? seriesIdRaw : null;
 
   if (!FORMATS.includes(format)) {
     return { status: "error", message: "Pick a valid format." };
@@ -83,6 +87,8 @@ export async function generateAndSaveDraft(
     };
   }
 
+  const series = seriesId ? await getSeriesById(seriesId) : null;
+
   const voiceMarkdown = renderVoiceRulesForPrompt(voice.rules);
 
   let drafted;
@@ -92,6 +98,13 @@ export async function generateAndSaveDraft(
       prompt,
       format,
       voiceRulesMarkdown: voiceMarkdown,
+      series: series
+        ? {
+            name: series.name,
+            description: series.description,
+            guidelines: series.guidelines,
+          }
+        : null,
     });
     scored = await scoreVoice({
       draft: drafted.body,
@@ -118,6 +131,7 @@ export async function generateAndSaveDraft(
       voice_rules_id: voice.rulesId,
       model_used: drafted.model,
       thinking_used: drafted.thinkingUsed,
+      series_id: series?.id ?? null,
     })
     .select("id, created_at")
     .single();
@@ -143,6 +157,7 @@ export async function generateAndSaveDraft(
       voiceScore: scored.score,
       voiceSummary: scored.summary,
       voiceIssues: scored.issues,
+      seriesName: series?.name ?? null,
       createdAt: inserted.created_at,
     },
   };

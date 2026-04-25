@@ -144,6 +144,8 @@ export interface Database {
           reviewed_by: string | null;
           reviewed_at: string | null;
           review_notes: string | null;
+          series_id: string | null;
+          scheduled_at: string | null;
           created_at: string;
           updated_at: string;
           deleted_at: string | null;
@@ -165,12 +167,46 @@ export interface Database {
           reviewed_by?: string | null;
           reviewed_at?: string | null;
           review_notes?: string | null;
+          series_id?: string | null;
+          scheduled_at?: string | null;
           created_at?: string;
           updated_at?: string;
           deleted_at?: string | null;
         };
         Update: Partial<
           Database["public"]["Tables"]["content_drafts"]["Insert"]
+        >;
+        Relationships: [];
+      };
+      content_series: {
+        Row: {
+          id: string;
+          brand_id: string;
+          slug: string;
+          name: string;
+          description: string;
+          format_hint: ContentFormat | null;
+          guidelines: string | null;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+          deleted_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          brand_id: string;
+          slug: string;
+          name: string;
+          description: string;
+          format_hint?: ContentFormat | null;
+          guidelines?: string | null;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          deleted_at?: string | null;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["content_series"]["Insert"]
         >;
         Relationships: [];
       };

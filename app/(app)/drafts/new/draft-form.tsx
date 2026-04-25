@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 
 import { VoiceScoreBadge } from "@/app/(app)/_components/voice-score-badge";
@@ -13,6 +13,7 @@ import {
 } from "./actions";
 
 import type { ContentFormat } from "@/types/database";
+import type { Series } from "@/lib/series";
 
 const FORMAT_OPTIONS: ContentFormat[] = [
   "instagram_caption",
@@ -29,22 +30,65 @@ const SEVERITY_STYLE = {
   low: "bg-muted text-muted-foreground border-border",
 } as const;
 
-export function DraftForm({ brandSlug }: { brandSlug: string }) {
+export function DraftForm({
+  brandSlug,
+  series,
+  initialPrompt,
+  initialSeriesId,
+  initialFormat,
+}: {
+  brandSlug: string;
+  series: Series[];
+  initialPrompt?: string;
+  initialSeriesId?: string;
+  initialFormat?: ContentFormat;
+}) {
   const [state, formAction, pending] = useActionState<GenerateState, FormData>(
     generateAndSaveDraft,
     INITIAL_GENERATE_STATE,
   );
+
+  const [seriesId, setSeriesId] = useState(initialSeriesId ?? "");
+  const selected = series.find((s) => s.id === seriesId) ?? null;
+  const defaultFormat: ContentFormat =
+    initialFormat ?? selected?.format_hint ?? "instagram_caption";
 
   return (
     <div className="flex flex-col gap-6">
       <form action={formAction} className="flex flex-col gap-4">
         <input type="hidden" name="brand" value={brandSlug} />
 
+        {series.length > 0 && (
+          <label className="flex flex-col gap-2 text-sm font-medium">
+            <span className="text-foreground/80">Series (optional)</span>
+            <select
+              name="series_id"
+              value={seriesId}
+              onChange={(e) => setSeriesId(e.target.value)}
+              disabled={pending}
+              className="h-12 rounded-lg border border-border bg-card px-3 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              <option value="">— No series, one-off —</option>
+              {series.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+            {selected && (
+              <span className="text-xs text-muted-foreground">
+                {selected.description}
+              </span>
+            )}
+          </label>
+        )}
+
         <label className="flex flex-col gap-2 text-sm font-medium">
           <span className="text-foreground/80">Format</span>
           <select
+            key={defaultFormat}
             name="format"
-            defaultValue="instagram_caption"
+            defaultValue={defaultFormat}
             disabled={pending}
             className="h-12 rounded-lg border border-border bg-card px-3 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
           >
@@ -64,6 +108,7 @@ export function DraftForm({ brandSlug }: { brandSlug: string }) {
             minLength={4}
             maxLength={2000}
             disabled={pending}
+            defaultValue={initialPrompt ?? ""}
             rows={5}
             placeholder="What's this post about? Be specific — the dish, the moment, the vibe."
             className="rounded-lg border border-border bg-card px-3 py-3 text-base text-foreground outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40"
@@ -89,7 +134,7 @@ export function DraftForm({ brandSlug }: { brandSlug: string }) {
         <article className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm">
           <header className="flex items-center justify-between gap-3">
             <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-muted-foreground">
-              Draft saved
+              Draft saved{state.draft.seriesName ? ` · ${state.draft.seriesName}` : ""}
             </p>
             <VoiceScoreBadge score={state.draft.voiceScore} />
           </header>
@@ -130,10 +175,16 @@ export function DraftForm({ brandSlug }: { brandSlug: string }) {
 
           <div className="flex gap-3">
             <Link
-              href="/drafts"
+              href={`/drafts/${state.draft.id}`}
               className="text-sm font-semibold text-primary hover:underline"
             >
-              View all drafts →
+              Open draft →
+            </Link>
+            <Link
+              href="/drafts"
+              className="text-sm font-semibold text-muted-foreground hover:text-foreground"
+            >
+              All drafts
             </Link>
           </div>
         </article>

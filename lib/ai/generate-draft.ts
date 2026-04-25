@@ -4,6 +4,7 @@ import { getAnthropicClient, MODEL_DRAFTING } from "./anthropic";
 import {
   buildDraftUserMessage,
   buildDrafterSystem,
+  type SeriesContext,
 } from "./prompts";
 
 import type { ContentFormat } from "@/types/database";
@@ -18,6 +19,7 @@ export async function generateDraft(args: {
   prompt: string;
   format: ContentFormat;
   voiceRulesMarkdown: string;
+  series?: SeriesContext | null;
 }): Promise<GenerateDraftResult> {
   const client = getAnthropicClient();
 
@@ -32,7 +34,7 @@ export async function generateDraft(args: {
     messages: [
       {
         role: "user",
-        content: buildDraftUserMessage(args.prompt, args.format),
+        content: buildDraftUserMessage(args.prompt, args.format, args.series),
       },
     ],
   });

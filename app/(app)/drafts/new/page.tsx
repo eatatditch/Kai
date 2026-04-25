@@ -1,14 +1,34 @@
 import Link from "next/link";
 
 import { getAccessibleBrands, getActiveBrand } from "@/lib/active-brand";
+import { listSeriesForBrand } from "@/lib/series";
 
 import { DraftForm } from "./draft-form";
+
+import type { ContentFormat } from "@/types/database";
 
 export const metadata = {
   title: "New draft — Ditch Marketing OS",
 };
 
-export default async function NewDraftPage() {
+const VALID_FORMATS: ContentFormat[] = [
+  "instagram_caption",
+  "tiktok_caption",
+  "email_subject",
+  "email_body",
+  "ad_script",
+  "series_script",
+];
+
+export default async function NewDraftPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    prompt?: string;
+    format?: string;
+    series_id?: string;
+  }>;
+}) {
   const brands = await getAccessibleBrands();
   const active = await getActiveBrand(brands);
 
@@ -20,6 +40,13 @@ export default async function NewDraftPage() {
     );
   }
 
+  const series = await listSeriesForBrand(active.id, { activeOnly: true });
+  const params = await searchParams;
+  const initialFormat =
+    params.format && VALID_FORMATS.includes(params.format as ContentFormat)
+      ? (params.format as ContentFormat)
+      : undefined;
+
   return (
     <div className="flex flex-col gap-6">
       <header>
@@ -30,19 +57,27 @@ export default async function NewDraftPage() {
           What are we writing?
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Kai drafts in {active.name}&rsquo;s voice, scores it, and saves it for
-          review.
+          Pick a series for the right voice, or leave it blank for a one-off.
+          Kai drafts, scores, and saves it for review.
         </p>
       </header>
 
-      <DraftForm brandSlug={active.slug} />
+      <DraftForm
+        brandSlug={active.slug}
+        series={series}
+        initialPrompt={params.prompt}
+        initialSeriesId={params.series_id}
+        initialFormat={initialFormat}
+      />
 
-      <Link
-        href="/drafts"
-        className="text-sm font-semibold text-muted-foreground hover:text-foreground"
-      >
-        ← Back to all drafts
-      </Link>
+      <div className="flex gap-4 text-sm font-semibold text-muted-foreground">
+        <Link href="/drafts" className="hover:text-foreground">
+          ← Back to all drafts
+        </Link>
+        <Link href="/ideas" className="hover:text-foreground">
+          Need ideas? →
+        </Link>
+      </div>
     </div>
   );
 }
