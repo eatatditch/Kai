@@ -18,10 +18,11 @@ export default async function AppLayout({
   // Middleware should already have redirected, but belt-and-suspenders.
   if (!user) redirect("/login");
 
-  const [{ data: profile }, brands] = await Promise.all([
+  const [{ data: profile, error: profileError }, brands] = await Promise.all([
     supabase.from("profiles").select("role").eq("id", user.id).single(),
     getAccessibleBrands(),
   ]);
+  console.log("DEBUG: profile query result", { profile, profileError, userId: user.id });
   const activeBrand = await getActiveBrand(brands);
 
   return (
