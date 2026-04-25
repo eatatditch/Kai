@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: ui-sans-serif, system-ui, sans-serif;
+    --font-display: ui-serif, Georgia, serif;
+  }
+
+  html, body {
+    @apply bg-cream text-ink antialiased;
+  }
+}
