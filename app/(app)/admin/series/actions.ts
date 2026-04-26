@@ -54,68 +54,80 @@ export async function createSeries(
   _prev: SeriesFormState,
   formData: FormData,
 ): Promise<SeriesFormState> {
-  const auth = await requireManager();
-  if (!auth.ok) return { status: "error", message: auth.message };
+  try {
+    const auth = await requireManager();
+    if (!auth.ok) return { status: "error", message: auth.message };
 
-  const brandId = String(formData.get("brand_id") ?? "").trim();
-  const name = String(formData.get("name") ?? "").trim();
-  const description = String(formData.get("description") ?? "").trim();
-  const guidelines = String(formData.get("guidelines") ?? "").trim() || null;
-  const formatRaw = String(formData.get("format_hint") ?? "").trim();
-  const formatHint =
-    formatRaw && FORMATS.includes(formatRaw as ContentFormat)
-      ? (formatRaw as ContentFormat)
-      : null;
+    const brandId = String(formData.get("brand_id") ?? "").trim();
+    const name = String(formData.get("name") ?? "").trim();
+    const description = String(formData.get("description") ?? "").trim();
+    const guidelines = String(formData.get("guidelines") ?? "").trim() || null;
+    const formatRaw = String(formData.get("format_hint") ?? "").trim();
+    const formatHint =
+      formatRaw && FORMATS.includes(formatRaw as ContentFormat)
+        ? (formatRaw as ContentFormat)
+        : null;
 
-  if (!brandId) return { status: "error", message: "Pick a brand." };
-  if (name.length < 2)
-    return { status: "error", message: "Series needs a name." };
-  if (description.length < 10)
-    return {
-      status: "error",
-      message: "Describe the series in a sentence or two.",
-    };
+    if (!brandId) return { status: "error", message: "Pick a brand." };
+    if (name.length < 2)
+      return { status: "error", message: "Series needs a name." };
+    if (description.length < 10)
+      return {
+        status: "error",
+        message: "Describe the series in a sentence or two.",
+      };
 
-  const slug = slugify(name);
-  const { error } = await auth.supabase.from("content_series").insert({
-    brand_id: brandId,
-    slug,
-    name,
-    description,
-    guidelines,
-    format_hint: formatHint,
-    is_active: true,
-  });
+    const slug = slugify(name);
+    const { error } = await auth.supabase.from("content_series").insert({
+      brand_id: brandId,
+      slug,
+      name,
+      description,
+      guidelines,
+      format_hint: formatHint,
+      is_active: true,
+    });
 
-  if (error) return { status: "error", message: error.message };
+    if (error) return { status: "error", message: error.message };
 
-  revalidatePath("/admin/series");
-  revalidatePath("/ideas");
-  revalidatePath("/drafts/new");
-  return { status: "ok", message: "Series created." };
+    revalidatePath("/admin/series");
+    revalidatePath("/ideas");
+    revalidatePath("/drafts/new");
+    return { status: "ok", message: "Series created." };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unexpected server error.";
+    return { status: "error", message };
+  }
 }
 
 export async function toggleSeries(
   _prev: SeriesFormState,
   formData: FormData,
 ): Promise<SeriesFormState> {
-  const auth = await requireManager();
-  if (!auth.ok) return { status: "error", message: auth.message };
+  try {
+    const auth = await requireManager();
+    if (!auth.ok) return { status: "error", message: auth.message };
 
-  const id = String(formData.get("id") ?? "");
-  const isActive = String(formData.get("is_active") ?? "") === "true";
+    const id = String(formData.get("id") ?? "");
+    const isActive = String(formData.get("is_active") ?? "") === "true";
 
-  const { error } = await auth.supabase
-    .from("content_series")
-    .update({ is_active: !isActive })
-    .eq("id", id);
+    const { error } = await auth.supabase
+      .from("content_series")
+      .update({ is_active: !isActive })
+      .eq("id", id);
 
-  if (error) return { status: "error", message: error.message };
+    if (error) return { status: "error", message: error.message };
 
-  revalidatePath("/admin/series");
-  revalidatePath("/ideas");
-  revalidatePath("/drafts/new");
-  return { status: "ok", message: "Updated." };
+    revalidatePath("/admin/series");
+    revalidatePath("/ideas");
+    revalidatePath("/drafts/new");
+    return { status: "ok", message: "Updated." };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unexpected server error.";
+    return { status: "error", message };
+  }
 }
 
 export { INITIAL as INITIAL_SERIES_STATE };

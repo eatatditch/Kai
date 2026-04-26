@@ -1,6 +1,13 @@
 import "server-only";
 
-import { getAnthropicClient, MODEL_SCORING } from "./anthropic";
+import {
+  formatAnthropicError,
+  getAnthropicClient,
+  getModelCandidates,
+  isModelNotFoundError,
+  isRetryableAnthropicError,
+  MODEL_SCORING,
+} from "./anthropic";
 import {
   buildScoreUserMessage,
   buildScorerSystem,
@@ -71,33 +78,54 @@ export async function scoreVoice(args: {
   voiceRulesMarkdown: string;
 }): Promise<VoiceScoreResult> {
   const client = getAnthropicClient();
+  const models = getModelCandidates(MODEL_SCORING);
 
-  const message = await client.messages.create({
-    model: MODEL_SCORING,
-    max_tokens: 2048,
-    system: buildScorerSystem(args.voiceRulesMarkdown),
-    output_config: {
-      format: { type: "json_schema", schema: SCORE_SCHEMA },
-    },
-    messages: [
-      {
-        role: "user",
-        content: buildScoreUserMessage(args.draft, args.format),
-      },
-    ],
-  });
+  let finalError: unknown = null;
+  for (let i = 0; i < models.length; i += 1) {
+    const model = models[i];
+    const isLastModel = i === models.length - 1;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        const message = await client.messages.create({
+          model,
+          max_tokens: 2048,
+          system: buildScorerSystem(args.voiceRulesMarkdown),
+          output_config: {
+            format: { type: "json_schema", schema: SCORE_SCHEMA },
+          },
+          messages: [
+            {
+              role: "user",
+              content: buildScoreUserMessage(args.draft, args.format),
+            },
+          ],
+        });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Voice scorer returned no text content");
+        const textBlock = message.content.find((b) => b.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          throw new Error("Voice scorer returned no text content");
+        }
+
+        const parsed = JSON.parse(textBlock.text) as RawScore;
+        return {
+          score: clampScore(parsed.score),
+          summary: parsed.summary,
+          issues: parsed.issues ?? [],
+        };
+      } catch (err) {
+        finalError = err;
+        if (isRetryableAnthropicError(err) && attempt < 2) {
+          continue;
+        }
+        if (!isModelNotFoundError(err) || isLastModel) {
+          throw new Error(formatAnthropicError(err));
+        }
+        break;
+      }
+    }
   }
 
-  const parsed = JSON.parse(textBlock.text) as RawScore;
-  return {
-    score: clampScore(parsed.score),
-    summary: parsed.summary,
-    issues: parsed.issues ?? [],
-  };
+  throw new Error(formatAnthropicError(finalError));
 }
 
 function clampScore(n: number): number {

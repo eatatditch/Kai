@@ -1,6 +1,13 @@
 import "server-only";
 
-import { getAnthropicClient, MODEL_SCORING } from "./anthropic";
+import {
+  formatAnthropicError,
+  getAnthropicClient,
+  getModelCandidates,
+  isModelNotFoundError,
+  isRetryableAnthropicError,
+  MODEL_SCORING,
+} from "./anthropic";
 import {
   buildDrafterSystem,
   buildIdeationUserMessage,
@@ -37,35 +44,56 @@ export async function generateIdeas(args: {
 }): Promise<GenerateIdeasResult> {
   const client = getAnthropicClient();
   const count = args.count ?? 6;
+  const models = getModelCandidates(MODEL_SCORING);
 
-  const message = await client.messages.create({
-    model: MODEL_SCORING,
-    max_tokens: 2048,
-    system: buildDrafterSystem(args.format, args.voiceRulesMarkdown),
-    output_config: {
-      format: { type: "json_schema", schema: IDEAS_SCHEMA },
-    },
-    messages: [
-      {
-        role: "user",
-        content: buildIdeationUserMessage({
-          brandName: args.brandName,
-          series: args.series,
-          hint: args.hint,
-          count,
-        }),
-      },
-    ],
-  });
+  let finalError: unknown = null;
+  for (let i = 0; i < models.length; i += 1) {
+    const model = models[i];
+    const isLastModel = i === models.length - 1;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        const message = await client.messages.create({
+          model,
+          max_tokens: 2048,
+          system: buildDrafterSystem(args.format, args.voiceRulesMarkdown),
+          output_config: {
+            format: { type: "json_schema", schema: IDEAS_SCHEMA },
+          },
+          messages: [
+            {
+              role: "user",
+              content: buildIdeationUserMessage({
+                brandName: args.brandName,
+                series: args.series,
+                hint: args.hint,
+                count,
+              }),
+            },
+          ],
+        });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Ideation returned no text content");
+        const textBlock = message.content.find((b) => b.type === "text");
+        if (!textBlock || textBlock.type !== "text") {
+          throw new Error("Ideation returned no text content");
+        }
+
+        const parsed = JSON.parse(textBlock.text) as { ideas: string[] };
+        return {
+          ideas: parsed.ideas ?? [],
+          model,
+        };
+      } catch (err) {
+        finalError = err;
+        if (isRetryableAnthropicError(err) && attempt < 2) {
+          continue;
+        }
+        if (!isModelNotFoundError(err) || isLastModel) {
+          throw new Error(formatAnthropicError(err));
+        }
+        break;
+      }
+    }
   }
 
-  const parsed = JSON.parse(textBlock.text) as { ideas: string[] };
-  return {
-    ideas: parsed.ideas ?? [],
-    model: MODEL_SCORING,
-  };
+  throw new Error(formatAnthropicError(finalError));
 }

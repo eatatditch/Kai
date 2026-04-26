@@ -36,65 +36,70 @@ export async function generateIdeasAction(
   _prev: IdeasState,
   formData: FormData,
 ): Promise<IdeasState> {
-  const brandSlug = String(formData.get("brand") ?? "").trim();
-  const format = String(formData.get("format") ?? "") as ContentFormat;
-  const seriesIdRaw = String(formData.get("series_id") ?? "").trim();
-  const seriesId = seriesIdRaw.length > 0 ? seriesIdRaw : null;
-  const hint = String(formData.get("hint") ?? "").trim() || null;
-
-  if (!FORMATS.includes(format)) {
-    return { status: "error", message: "Pick a valid format." };
-  }
-
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { status: "error", message: "Not signed in." };
-
-  const { data: brand } = await supabase
-    .from("brands")
-    .select("id, slug, name")
-    .eq("slug", brandSlug)
-    .maybeSingle();
-  if (!brand) {
-    return { status: "error", message: "Brand not found or no access." };
-  }
-
-  const voice = await loadVoiceRules(brand.id);
-  if (!voice) {
-    return {
-      status: "error",
-      message: "No brand voice rules exist for this brand yet.",
-    };
-  }
-
-  const series = seriesId ? await getSeriesById(seriesId) : null;
-  const voiceMarkdown = renderVoiceRulesForPrompt(voice.rules);
-
   try {
-    const result = await generateIdeas({
-      brandName: brand.name,
-      format,
-      voiceRulesMarkdown: voiceMarkdown,
-      series: series
-        ? {
-            name: series.name,
-            description: series.description,
-            guidelines: series.guidelines,
-          }
-        : null,
-      hint,
-      count: 6,
-    });
+    const brandSlug = String(formData.get("brand") ?? "").trim();
+    const format = String(formData.get("format") ?? "") as ContentFormat;
+    const seriesIdRaw = String(formData.get("series_id") ?? "").trim();
+    const seriesId = seriesIdRaw.length > 0 ? seriesIdRaw : null;
+    const hint = String(formData.get("hint") ?? "").trim() || null;
 
-    return {
-      status: "ok",
-      ideas: result.ideas,
-      seriesId: series?.id ?? null,
-      seriesName: series?.name ?? null,
-      format,
-    };
+    if (!FORMATS.includes(format)) {
+      return { status: "error", message: "Pick a valid format." };
+    }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { status: "error", message: "Not signed in." };
+
+    const { data: brand } = await supabase
+      .from("brands")
+      .select("id, slug, name")
+      .eq("slug", brandSlug)
+      .maybeSingle();
+    if (!brand) {
+      return { status: "error", message: "Brand not found or no access." };
+    }
+
+    const voice = await loadVoiceRules(brand.id);
+    if (!voice) {
+      return {
+        status: "error",
+        message: "No brand voice rules exist for this brand yet.",
+      };
+    }
+
+    const series = seriesId ? await getSeriesById(seriesId) : null;
+    const voiceMarkdown = renderVoiceRulesForPrompt(voice.rules);
+
+    try {
+      const result = await generateIdeas({
+        brandName: brand.name,
+        format,
+        voiceRulesMarkdown: voiceMarkdown,
+        series: series
+          ? {
+              name: series.name,
+              description: series.description,
+              guidelines: series.guidelines,
+            }
+          : null,
+        hint,
+        count: 6,
+      });
+
+      return {
+        status: "ok",
+        ideas: result.ideas,
+        seriesId: series?.id ?? null,
+        seriesName: series?.name ?? null,
+        format,
+      };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Ideation failed.";
+      return { status: "error", message };
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ideation failed.";
     return { status: "error", message };
