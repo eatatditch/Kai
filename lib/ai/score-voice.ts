@@ -1,6 +1,11 @@
 import "server-only";
 
-import { getAnthropicClient, MODEL_SCORING } from "./anthropic";
+import {
+  getAnthropicClient,
+  getModelCandidates,
+  isModelNotFoundError,
+  MODEL_SCORING,
+} from "./anthropic";
 import {
   buildScoreUserMessage,
   buildScorerSystem,
@@ -71,33 +76,46 @@ export async function scoreVoice(args: {
   voiceRulesMarkdown: string;
 }): Promise<VoiceScoreResult> {
   const client = getAnthropicClient();
+  const models = getModelCandidates(MODEL_SCORING);
 
-  const message = await client.messages.create({
-    model: MODEL_SCORING,
-    max_tokens: 2048,
-    system: buildScorerSystem(args.voiceRulesMarkdown),
-    output_config: {
-      format: { type: "json_schema", schema: SCORE_SCHEMA },
-    },
-    messages: [
-      {
-        role: "user",
-        content: buildScoreUserMessage(args.draft, args.format),
-      },
-    ],
-  });
+  let finalError: unknown = null;
+  for (const model of models) {
+    try {
+      const message = await client.messages.create({
+        model,
+        max_tokens: 2048,
+        system: buildScorerSystem(args.voiceRulesMarkdown),
+        output_config: {
+          format: { type: "json_schema", schema: SCORE_SCHEMA },
+        },
+        messages: [
+          {
+            role: "user",
+            content: buildScoreUserMessage(args.draft, args.format),
+          },
+        ],
+      });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Voice scorer returned no text content");
+      const textBlock = message.content.find((b) => b.type === "text");
+      if (!textBlock || textBlock.type !== "text") {
+        throw new Error("Voice scorer returned no text content");
+      }
+
+      const parsed = JSON.parse(textBlock.text) as RawScore;
+      return {
+        score: clampScore(parsed.score),
+        summary: parsed.summary,
+        issues: parsed.issues ?? [],
+      };
+    } catch (err) {
+      finalError = err;
+      if (!isModelNotFoundError(err) || model === models.at(-1)) {
+        throw err;
+      }
+    }
   }
 
-  const parsed = JSON.parse(textBlock.text) as RawScore;
-  return {
-    score: clampScore(parsed.score),
-    summary: parsed.summary,
-    issues: parsed.issues ?? [],
-  };
+  throw finalError ?? new Error("Voice scoring failed.");
 }
 
 function clampScore(n: number): number {
