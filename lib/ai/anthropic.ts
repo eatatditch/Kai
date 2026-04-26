@@ -9,6 +9,11 @@ import Anthropic from "@anthropic-ai/sdk";
 export const MODEL_DRAFTING = "claude-sonnet-4-6" as const;
 export const MODEL_SCORING = "claude-haiku-4-5" as const;
 
+const MODEL_FALLBACKS = {
+  [MODEL_DRAFTING]: ["claude-sonnet-4-20250514"],
+  [MODEL_SCORING]: ["claude-haiku-4-5-20251001"],
+} as const;
+
 let _client: Anthropic | null = null;
 
 export function getAnthropicClient(): Anthropic {
@@ -22,4 +27,16 @@ export function getAnthropicClient(): Anthropic {
     _client = new Anthropic({ apiKey });
   }
   return _client;
+}
+
+export function getModelCandidates(
+  primary: typeof MODEL_DRAFTING | typeof MODEL_SCORING,
+): readonly string[] {
+  return [primary, ...MODEL_FALLBACKS[primary]];
+}
+
+export function isModelNotFoundError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const maybe = err as Error & { status?: number; name?: string };
+  return maybe.status === 404 || maybe.name === "NotFoundError";
 }

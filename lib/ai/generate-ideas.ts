@@ -1,6 +1,11 @@
 import "server-only";
 
-import { getAnthropicClient, MODEL_SCORING } from "./anthropic";
+import {
+  getAnthropicClient,
+  getModelCandidates,
+  isModelNotFoundError,
+  MODEL_SCORING,
+} from "./anthropic";
 import {
   buildDrafterSystem,
   buildIdeationUserMessage,
@@ -37,35 +42,48 @@ export async function generateIdeas(args: {
 }): Promise<GenerateIdeasResult> {
   const client = getAnthropicClient();
   const count = args.count ?? 6;
+  const models = getModelCandidates(MODEL_SCORING);
 
-  const message = await client.messages.create({
-    model: MODEL_SCORING,
-    max_tokens: 2048,
-    system: buildDrafterSystem(args.format, args.voiceRulesMarkdown),
-    output_config: {
-      format: { type: "json_schema", schema: IDEAS_SCHEMA },
-    },
-    messages: [
-      {
-        role: "user",
-        content: buildIdeationUserMessage({
-          brandName: args.brandName,
-          series: args.series,
-          hint: args.hint,
-          count,
-        }),
-      },
-    ],
-  });
+  let finalError: unknown = null;
+  for (const model of models) {
+    try {
+      const message = await client.messages.create({
+        model,
+        max_tokens: 2048,
+        system: buildDrafterSystem(args.format, args.voiceRulesMarkdown),
+        output_config: {
+          format: { type: "json_schema", schema: IDEAS_SCHEMA },
+        },
+        messages: [
+          {
+            role: "user",
+            content: buildIdeationUserMessage({
+              brandName: args.brandName,
+              series: args.series,
+              hint: args.hint,
+              count,
+            }),
+          },
+        ],
+      });
 
-  const textBlock = message.content.find((b) => b.type === "text");
-  if (!textBlock || textBlock.type !== "text") {
-    throw new Error("Ideation returned no text content");
+      const textBlock = message.content.find((b) => b.type === "text");
+      if (!textBlock || textBlock.type !== "text") {
+        throw new Error("Ideation returned no text content");
+      }
+
+      const parsed = JSON.parse(textBlock.text) as { ideas: string[] };
+      return {
+        ideas: parsed.ideas ?? [],
+        model,
+      };
+    } catch (err) {
+      finalError = err;
+      if (!isModelNotFoundError(err) || model === models.at(-1)) {
+        throw err;
+      }
+    }
   }
 
-  const parsed = JSON.parse(textBlock.text) as { ideas: string[] };
-  return {
-    ideas: parsed.ideas ?? [],
-    model: MODEL_SCORING,
-  };
+  throw finalError ?? new Error("Ideation failed.");
 }
