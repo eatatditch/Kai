@@ -5,7 +5,7 @@ import type { CalendarEvent, FilterKey, ViewMode } from "@/types";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
 import { startOfWeek, ymd } from "@/lib/date-utils";
 import { getType } from "@/lib/event-types";
-import { MOCK_EVENTS } from "@/lib/mock-events";
+import { fetchEvents, upsertEvent, deleteEventById } from "@/lib/events-api";
 import { Header } from "./Header";
 import { FilterBar } from "./FilterBar";
 import { MonthView } from "./MonthView";
@@ -43,13 +43,17 @@ function periodLabel(view: ViewMode, cursor: Date): string {
 
 type ModalState = { date: string; editId: string | null } | null;
 
-export function Calendar() {
+type Props = {
+  userEmail: string;
+};
+
+export function Calendar({ userEmail }: Props) {
   const [view, setView] = useState<ViewMode>("month");
   const [cursor, setCursor] = useState<Date>(new Date(2026, 4, 1));
   const [filters, setFilters] = useState<Set<FilterKey>>(
     () => new Set<FilterKey>(["all"]),
   );
-  const [events, setEvents] = useState<CalendarEvent[]>(MOCK_EVENTS);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [modal, setModal] = useState<ModalState>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -65,6 +69,20 @@ export function Calendar() {
       if (toastTimer.current) clearTimeout(toastTimer.current);
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetchEvents()
+      .then((rows) => {
+        if (active) setEvents(rows);
+      })
+      .catch(() => {
+        if (active) showToast("Failed to load events");
+      });
+    return () => {
+      active = false;
+    };
+  }, [showToast]);
 
   useEffect(() => {
     if (!modal) return;
@@ -148,21 +166,40 @@ export function Calendar() {
 
   const onSaveEvent = (ev: CalendarEvent) => {
     const isUpdate = events.some((e) => e.id === ev.id);
+    const snapshot = events;
     setEvents((prev) =>
       isUpdate
         ? prev.map((e) => (e.id === ev.id ? ev : e))
         : [...prev, ev],
     );
     setModal((prev) => (prev ? { date: ev.date, editId: null } : prev));
-    showToast(isUpdate ? "Event updated" : "Event added");
+
+    upsertEvent(ev)
+      .then((saved) => {
+        setEvents((prev) =>
+          prev.map((e) => (e.id === saved.id ? saved : e)),
+        );
+        showToast(isUpdate ? "Event updated" : "Event added");
+      })
+      .catch(() => {
+        setEvents(snapshot);
+        showToast("Save failed — changes rolled back");
+      });
   };
 
   const onDeleteEvent = (id: string) => {
+    const snapshot = events;
     setEvents((prev) => prev.filter((e) => e.id !== id));
     setModal((prev) =>
       prev && prev.editId === id ? { date: prev.date, editId: null } : prev,
     );
-    showToast("Event deleted");
+
+    deleteEventById(id)
+      .then(() => showToast("Event deleted"))
+      .catch(() => {
+        setEvents(snapshot);
+        showToast("Delete failed — restored");
+      });
   };
 
   const onEditEvent = (ev: CalendarEvent) =>
@@ -182,6 +219,7 @@ export function Calendar() {
         view={view}
         prevDisabled={navDisabled.prev}
         nextDisabled={navDisabled.next}
+        userEmail={userEmail}
         onViewChange={setView}
         onPrev={() => navigate(-1)}
         onToday={goToday}
