@@ -34,3 +34,26 @@ export type Recurrence =
   | "monthly"
   | "quarterly"
   | "yearly";
+
+export type NoteCategory =
+  | "shoot_idea"
+  | "event_idea"
+  | "meeting_note"
+  | "general";
+
+export type NoteCategoryDef = {
+  id: NoteCategory;
+  label: string;
+  emoji: string;
+  color: string;
+};
+
+export type Note = {
+  id: string;
+  category: NoteCategory;
+  title: string;
+  body?: string;
+  updatedAt: string;
+};
+
+export type NoteFilterKey = NoteCategory | "all";

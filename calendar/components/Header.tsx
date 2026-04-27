@@ -59,6 +59,13 @@ export function Header({
           </>
         )}
         <span aria-hidden="true">·</span>
+        <Link
+          href="/notes"
+          className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
+        >
+          Notes
+        </Link>
+        <span aria-hidden="true">·</span>
         <form action="/auth/signout" method="post" className="inline">
           <button
             type="submit"
