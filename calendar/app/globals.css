@@ -87,10 +87,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+@page calendar  { size: 11in 8.5in; margin: 0.4in; }
+@page breakdown { size: 8.5in 11in; margin: 0.5in; }
+
 @media print {
   body { background: white; }
-  @page calendar  { size: landscape; margin: 0.4in; }
-  @page breakdown { size: portrait;  margin: 0.5in; }
   .page-calendar  { page: calendar; }
   .page-breakdown { page: breakdown; }
 }
