@@ -88,7 +88,12 @@ type Props = {
 
 export function Calendar({ userEmail, isAdmin }: Props) {
   const [view, setView] = useState<ViewMode>("month");
-  const [cursor, setCursor] = useState<Date>(new Date(2026, 4, 1));
+  const [cursor, setCursor] = useState<Date>(() => {
+    const today = new Date();
+    if (today < MIN_DATE) return new Date(MIN_DATE);
+    if (today > MAX_DATE) return new Date(MAX_DATE);
+    return today;
+  });
   const [filters, setFilters] = useState<Set<FilterKey>>(
     () => new Set<FilterKey>(["all"]),
   );
