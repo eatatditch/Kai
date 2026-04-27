@@ -6,6 +6,7 @@ type Props = {
   prevDisabled: boolean;
   nextDisabled: boolean;
   userEmail: string;
+  isAdmin: boolean;
   onViewChange: (v: ViewMode) => void;
   onPrev: () => void;
   onToday: () => void;
@@ -32,6 +33,7 @@ export function Header({
   prevDisabled,
   nextDisabled,
   userEmail,
+  isAdmin,
   onViewChange,
   onPrev,
   onToday,
@@ -45,6 +47,17 @@ export function Header({
     <>
       <div className="mb-2 flex justify-end gap-3 text-[12px] text-muted print:hidden">
         <span>{userEmail}</span>
+        {isAdmin && (
+          <>
+            <span aria-hidden="true">·</span>
+            <Link
+              href="/admin"
+              className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
+            >
+              Manage users
+            </Link>
+          </>
+        )}
         <span aria-hidden="true">·</span>
         <form action="/auth/signout" method="post" className="inline">
           <button

@@ -50,9 +50,10 @@ type ModalState = { date: string; editId: string | null } | null;
 
 type Props = {
   userEmail: string;
+  isAdmin: boolean;
 };
 
-export function Calendar({ userEmail }: Props) {
+export function Calendar({ userEmail, isAdmin }: Props) {
   const [view, setView] = useState<ViewMode>("month");
   const [cursor, setCursor] = useState<Date>(new Date(2026, 4, 1));
   const [filters, setFilters] = useState<Set<FilterKey>>(
@@ -243,6 +244,7 @@ export function Calendar({ userEmail }: Props) {
         prevDisabled={navDisabled.prev}
         nextDisabled={navDisabled.next}
         userEmail={userEmail}
+        isAdmin={isAdmin}
         onViewChange={setView}
         onPrev={() => navigate(-1)}
         onToday={goToday}
