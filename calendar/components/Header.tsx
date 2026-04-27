@@ -4,6 +4,7 @@ type Props = {
   view: ViewMode;
   prevDisabled: boolean;
   nextDisabled: boolean;
+  userEmail: string;
   onViewChange: (v: ViewMode) => void;
   onPrev: () => void;
   onToday: () => void;
@@ -29,6 +30,7 @@ export function Header({
   view,
   prevDisabled,
   nextDisabled,
+  userEmail,
   onViewChange,
   onPrev,
   onToday,
@@ -39,18 +41,31 @@ export function Header({
   onNewEvent,
 }: Props) {
   return (
-    <header className="mb-[22px] flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-5">
-      <div className="flex flex-col">
-        <span className="mb-1 text-[11px] font-bold uppercase tracking-[0.22em] text-orange">
-          Ditch Hospitality Group
-        </span>
-        <h1 className="m-0 font-bebas text-[clamp(40px,5vw,60px)] leading-[0.95] tracking-[0.01em] text-navy">
-          Content Calendar
-        </h1>
-        <span className="mt-1.5 text-[13px] font-medium text-muted">
-          May 2026 — June 2027 · Brand &amp; Marketing
-        </span>
+    <>
+      <div className="mb-2 flex justify-end gap-3 text-[12px] text-muted">
+        <span>{userEmail}</span>
+        <span aria-hidden="true">·</span>
+        <form action="/auth/signout" method="post" className="inline">
+          <button
+            type="submit"
+            className="cursor-pointer font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
+          >
+            Sign out
+          </button>
+        </form>
       </div>
+      <header className="mb-[22px] flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-5">
+        <div className="flex flex-col">
+          <span className="mb-1 text-[11px] font-bold uppercase tracking-[0.22em] text-orange">
+            Ditch Hospitality Group
+          </span>
+          <h1 className="m-0 font-bebas text-[clamp(40px,5vw,60px)] leading-[0.95] tracking-[0.01em] text-navy">
+            Content Calendar
+          </h1>
+          <span className="mt-1.5 text-[13px] font-medium text-muted">
+            May 2026 — June 2027 · Brand &amp; Marketing
+          </span>
+        </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
         <div className={groupCls}>
@@ -117,7 +132,8 @@ export function Header({
             <span className="text-sm leading-none">＋</span> New Event
           </button>
         </div>
-      </div>
-    </header>
+        </div>
+      </header>
+    </>
   );
 }
