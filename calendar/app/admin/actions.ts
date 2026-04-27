@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ADMIN_EMAIL, isAdmin } from "@/lib/constants";
 
-export type ActionResult = { ok: true } | { ok: false; error: string };
+export type ActionResult =
+  | { ok: true; message?: string }
+  | { ok: false; error: string };
 
 export async function addUser(
   _prev: ActionResult | null,
@@ -45,19 +47,40 @@ export async function addUser(
     password,
     email_confirm: true,
   });
+
+  let alreadyExisted = false;
   if (createError) {
-    return { ok: false, error: createError.message };
+    const code = (createError as { code?: string }).code ?? "";
+    const msg = createError.message ?? "";
+    const looksLikeDuplicate =
+      code === "email_exists" ||
+      code === "user_already_exists" ||
+      /already (registered|exists)/i.test(msg);
+    if (looksLikeDuplicate) {
+      alreadyExisted = true;
+    } else {
+      return {
+        ok: false,
+        error: `${msg}${code ? ` (code: ${code})` : ""}`,
+      };
+    }
   }
 
   const { error: insertError } = await supabase
     .from("allowlist")
-    .insert({ email, created_by: user.id });
+    .upsert({ email, created_by: user.id }, { onConflict: "email" });
   if (insertError) {
     return { ok: false, error: insertError.message };
   }
 
   revalidatePath("/admin");
-  return { ok: true };
+  return alreadyExisted
+    ? {
+        ok: true,
+        message:
+          "Already had a Supabase auth account — added to allowlist. Their existing password still applies.",
+      }
+    : { ok: true };
 }
 
 export async function removeUser(

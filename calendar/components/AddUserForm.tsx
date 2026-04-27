@@ -70,7 +70,7 @@ export function AddUserForm() {
       )}
       {state?.ok && (
         <div className="rounded-sm border border-sage bg-sage-tint px-3 py-2 text-[13px] font-medium text-sage">
-          User created and allowlisted.
+          {state.message ?? "User created and allowlisted."}
         </div>
       )}
 
