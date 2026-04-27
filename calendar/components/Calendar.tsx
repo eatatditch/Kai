@@ -10,6 +10,8 @@ import {
   upsertEvent,
   deleteEventById,
   subscribeEvents,
+  mergeEvents,
+  replaceAllEvents,
 } from "@/lib/events-api";
 import { Header } from "./Header";
 import { FilterBar } from "./FilterBar";
@@ -47,6 +49,34 @@ function periodLabel(view: ViewMode, cursor: Date): string {
 }
 
 type ModalState = { date: string; editId: string | null } | null;
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function normalizeImported(rows: unknown[]): CalendarEvent[] {
+  return rows
+    .filter(
+      (r): r is Record<string, unknown> =>
+        typeof r === "object" && r !== null,
+    )
+    .map((r) => {
+      const rawId = typeof r.id === "string" ? r.id : "";
+      const id = UUID_RE.test(rawId) ? rawId : crypto.randomUUID();
+      return {
+        id,
+        date: typeof r.date === "string" ? r.date : "",
+        type: typeof r.type === "string" ? r.type : "other",
+        title: typeof r.title === "string" && r.title ? r.title : "Untitled",
+        time:
+          typeof r.time === "string" && r.time
+            ? r.time.slice(0, 5)
+            : undefined,
+        notes: typeof r.notes === "string" && r.notes ? r.notes : undefined,
+      };
+    })
+    .filter((e) => DATE_RE.test(e.date));
+}
 
 type Props = {
   userEmail: string;
@@ -237,6 +267,109 @@ export function Calendar({ userEmail, isAdmin }: Props) {
       ? events.find((e) => e.id === modal.editId) ?? null
       : null;
 
+  const onExport = () => {
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            brand: "Ditch Hospitality Group",
+            events,
+          },
+          null,
+          2,
+        ),
+      ],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `ditch-content-calendar-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast("Calendar exported");
+  };
+
+  const onImport = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json";
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(text);
+      } catch {
+        showToast("Invalid JSON file");
+        return;
+      }
+      const raw = Array.isArray(parsed)
+        ? parsed
+        : (parsed as { events?: unknown[] })?.events;
+      if (!Array.isArray(raw)) {
+        showToast("Invalid format: no events array");
+        return;
+      }
+      const incoming = normalizeImported(raw);
+      if (incoming.length === 0) {
+        showToast("No valid events found in file");
+        return;
+      }
+      const choice = confirm(
+        `Click OK to MERGE ${incoming.length} events with existing.\nClick Cancel to REPLACE all events with these.`,
+      );
+      try {
+        if (choice) {
+          await mergeEvents(incoming);
+          showToast(`Merged ${incoming.length} events`);
+        } else {
+          await replaceAllEvents(incoming);
+          showToast(`Replaced with ${incoming.length} events`);
+        }
+        const rows = await fetchEvents();
+        setEvents(rows);
+      } catch (err) {
+        showToast(
+          `Import failed: ${err instanceof Error ? err.message : "unknown error"}`,
+        );
+      }
+    };
+    input.click();
+  };
+
+  useEffect(() => {
+    if (modal) return;
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        navigate(1);
+      } else if (e.key === "t" || e.key === "T") {
+        goToday();
+      } else if (e.key === "m" || e.key === "M") {
+        setView("month");
+      } else if (e.key === "w" || e.key === "W") {
+        setView("week");
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [modal, view, cursor]);
+
   return (
     <div className="mx-auto max-w-[1400px] px-5 pt-6 pb-15">
       <Header
@@ -250,8 +383,8 @@ export function Calendar({ userEmail, isAdmin }: Props) {
         onToday={goToday}
         onNext={() => navigate(1)}
         onPrint={() => window.print()}
-        onExport={() => {}}
-        onImport={() => {}}
+        onExport={onExport}
+        onImport={onImport}
         onNewEvent={onNewEvent}
       />
 
