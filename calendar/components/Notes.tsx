@@ -148,6 +148,13 @@ export function Notes({ userEmail, isAdmin }: Props) {
           Calendar
         </Link>
         <span aria-hidden="true">·</span>
+        <Link
+          href="/reports"
+          className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
+        >
+          Reports
+        </Link>
+        <span aria-hidden="true">·</span>
         <form action="/auth/signout" method="post" className="inline">
           <button
             type="submit"

@@ -290,7 +290,8 @@ export function EventModal({
                 {recurrence !== "none" && (
                   <p className="mt-1 text-[11px] text-muted">
                     Will create {occurrenceCount} event
-                    {occurrenceCount === 1 ? "" : "s"} through Jun 30, 2027.
+                    {occurrenceCount === 1 ? "" : "s"} (capped at 500
+                    occurrences).
                   </p>
                 )}
               </div>

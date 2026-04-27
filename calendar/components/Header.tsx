@@ -66,6 +66,13 @@ export function Header({
           Notes
         </Link>
         <span aria-hidden="true">·</span>
+        <Link
+          href="/reports"
+          className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
+        >
+          Reports
+        </Link>
+        <span aria-hidden="true">·</span>
         <form action="/auth/signout" method="post" className="inline">
           <button
             type="submit"
@@ -88,7 +95,7 @@ export function Header({
             Content Calendar
           </h1>
           <span className="mt-1.5 text-[13px] font-medium text-muted print:hidden">
-            May 2026 — June 2027 · Brand &amp; Marketing
+            May 2026 onward · Brand &amp; Marketing
           </span>
         </Link>
 
