@@ -9,6 +9,7 @@ import { MOCK_EVENTS } from "@/lib/mock-events";
 import { Header } from "./Header";
 import { FilterBar } from "./FilterBar";
 import { MonthView } from "./MonthView";
+import { WeekView } from "./WeekView";
 import { Legend } from "./Legend";
 
 function clampMonth(d: Date) {
@@ -146,9 +147,12 @@ export function Calendar() {
           onEventClick={onEventClick}
         />
       ) : (
-        <div className="rounded-[10px] border-[1.5px] border-ink bg-white p-10 text-center font-bebas text-2xl tracking-[0.08em] text-muted shadow-card">
-          Week view — coming next
-        </div>
+        <WeekView
+          cursor={cursor}
+          events={visibleEvents}
+          onDayClick={onDayClick}
+          onEventClick={onEventClick}
+        />
       )}
 
       <Legend />
