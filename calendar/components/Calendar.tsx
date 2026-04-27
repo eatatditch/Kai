@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarEvent, FilterKey, ViewMode } from "@/types";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
-import { startOfWeek } from "@/lib/date-utils";
+import { startOfWeek, ymd } from "@/lib/date-utils";
 import { getType } from "@/lib/event-types";
 import { MOCK_EVENTS } from "@/lib/mock-events";
 import { Header } from "./Header";
@@ -11,6 +11,8 @@ import { FilterBar } from "./FilterBar";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
 import { Legend } from "./Legend";
+import { EventModal } from "./EventModal";
+import { Toast } from "./Toast";
 
 function clampMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -39,14 +41,39 @@ function periodLabel(view: ViewMode, cursor: Date): string {
   return `${startStr} — ${endStr}`.toUpperCase();
 }
 
+type ModalState = { date: string; editId: string | null } | null;
+
 export function Calendar() {
   const [view, setView] = useState<ViewMode>("month");
   const [cursor, setCursor] = useState<Date>(new Date(2026, 4, 1));
   const [filters, setFilters] = useState<Set<FilterKey>>(
     () => new Set<FilterKey>(["all"]),
   );
+  const [events, setEvents] = useState<CalendarEvent[]>(MOCK_EVENTS);
+  const [modal, setModal] = useState<ModalState>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const events = MOCK_EVENTS;
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastMsg(null), 2200);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (toastTimer.current) clearTimeout(toastTimer.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!modal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setModal(null);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [modal]);
 
   const visibleEvents = useMemo(() => {
     if (filters.has("all")) return events;
@@ -109,13 +136,45 @@ export function Calendar() {
     });
   };
 
-  const noop = () => {};
-  const onDayClick = (_date: string) => {
-    void _date;
+  const onDayClick = (date: string) => setModal({ date, editId: null });
+  const onEventClick = (ev: CalendarEvent) =>
+    setModal({ date: ev.date, editId: ev.id });
+
+  const onNewEvent = () => {
+    const today = new Date();
+    const target = today < MIN_DATE || today > MAX_DATE ? MIN_DATE : today;
+    setModal({ date: ymd(target), editId: null });
   };
-  const onEventClick = (_ev: CalendarEvent) => {
-    void _ev;
+
+  const onSaveEvent = (ev: CalendarEvent) => {
+    const isUpdate = events.some((e) => e.id === ev.id);
+    setEvents((prev) =>
+      isUpdate
+        ? prev.map((e) => (e.id === ev.id ? ev : e))
+        : [...prev, ev],
+    );
+    setModal((prev) => (prev ? { date: ev.date, editId: null } : prev));
+    showToast(isUpdate ? "Event updated" : "Event added");
   };
+
+  const onDeleteEvent = (id: string) => {
+    setEvents((prev) => prev.filter((e) => e.id !== id));
+    setModal((prev) =>
+      prev && prev.editId === id ? { date: prev.date, editId: null } : prev,
+    );
+    showToast("Event deleted");
+  };
+
+  const onEditEvent = (ev: CalendarEvent) =>
+    setModal({ date: ev.date, editId: ev.id });
+
+  const onCancelEdit = () =>
+    setModal((prev) => (prev ? { date: prev.date, editId: null } : prev));
+
+  const editingEvent =
+    modal && modal.editId
+      ? events.find((e) => e.id === modal.editId) ?? null
+      : null;
 
   return (
     <div className="mx-auto max-w-[1400px] px-5 pt-6 pb-15">
@@ -128,9 +187,9 @@ export function Calendar() {
         onToday={goToday}
         onNext={() => navigate(1)}
         onPrint={() => window.print()}
-        onExport={noop}
-        onImport={noop}
-        onNewEvent={noop}
+        onExport={() => {}}
+        onImport={() => {}}
+        onNewEvent={onNewEvent}
       />
 
       <FilterBar active={filters} onToggle={toggleFilter} />
@@ -160,6 +219,22 @@ export function Calendar() {
       <p className="mt-5 text-center font-caveat text-base text-muted">
         spread joy. build community. surf well.
       </p>
+
+      {modal && (
+        <EventModal
+          key={`${modal.date}-${modal.editId ?? "new"}`}
+          date={modal.date}
+          initialEvent={editingEvent}
+          events={events}
+          onClose={() => setModal(null)}
+          onSave={onSaveEvent}
+          onDelete={onDeleteEvent}
+          onEdit={onEditEvent}
+          onCancelEdit={onCancelEdit}
+        />
+      )}
+
+      <Toast message={toastMsg} />
     </div>
   );
 }
