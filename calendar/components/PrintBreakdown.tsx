@@ -67,7 +67,7 @@ export function PrintBreakdown({ events, view, cursor }: Props) {
   }
 
   return (
-    <section className="hidden print:block print:break-before-page print:pt-1">
+    <section className="page-breakdown hidden print:block print:break-before-page print:pt-1">
       <header className="mb-3 border-b border-black pb-1.5">
         <div className="text-[9px] font-bold uppercase tracking-[0.22em] text-black">
           Ditch Hospitality Group · Event Breakdown

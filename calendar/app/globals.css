@@ -89,5 +89,8 @@ body {
 
 @media print {
   body { background: white; }
-  @page { size: landscape; margin: 0.4in; }
+  @page calendar  { size: landscape; margin: 0.4in; }
+  @page breakdown { size: portrait;  margin: 0.5in; }
+  .page-calendar  { page: calendar; }
+  .page-breakdown { page: breakdown; }
 }

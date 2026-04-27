@@ -397,7 +397,7 @@ export function Calendar({ userEmail, isAdmin }: Props) {
   }, [modal, view, cursor]);
 
   return (
-    <div className="mx-auto max-w-[1400px] px-5 pt-6 pb-15 print:max-w-none print:px-0 print:pt-0 print:pb-0">
+    <div className="page-calendar mx-auto max-w-[1400px] px-5 pt-6 pb-15 print:max-w-none print:px-0 print:pt-0 print:pb-0">
       <Header
         view={view}
         prevDisabled={navDisabled.prev}
