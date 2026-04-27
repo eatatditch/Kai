@@ -25,3 +25,12 @@ export type CalendarEvent = {
 };
 
 export type FilterKey = Category | "all";
+
+export type Recurrence =
+  | "none"
+  | "daily"
+  | "every_other_day"
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+  | "yearly";
