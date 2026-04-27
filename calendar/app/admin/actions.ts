@@ -58,6 +58,12 @@ export async function addUser(
       /already (registered|exists)/i.test(msg);
     if (looksLikeDuplicate) {
       alreadyExisted = true;
+    } else if (code === "not_admin") {
+      return {
+        ok: false,
+        error:
+          "SUPABASE_SERVICE_ROLE_KEY in Vercel is missing or set to the anon key. Copy the 'service_role' secret from Supabase → Project Settings → API and redeploy.",
+      };
     } else {
       return {
         ok: false,
