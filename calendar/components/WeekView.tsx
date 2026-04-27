@@ -57,9 +57,9 @@ export function WeekView({ cursor, events, onDayClick, onEventClick }: Props) {
           onDayClick(dateStr);
         }}
         className={[
-          "flex min-h-[380px] cursor-pointer flex-col border-r border-line-soft px-2.5 pt-2.5 pb-3 transition-colors duration-[120ms] last:border-r-0",
+          "flex min-h-[380px] cursor-pointer flex-col border-r border-line-soft px-2.5 pt-2.5 pb-3 transition-colors duration-[120ms] last:border-r-0 print:min-h-[200px] print:break-inside-avoid",
           isToday
-            ? "bg-sage-tint hover:bg-[#d6e3d3]"
+            ? "bg-sage-tint hover:bg-[#d6e3d3] print:bg-white"
             : "bg-white hover:bg-orange-tint",
           isOutOfRange ? "cursor-not-allowed opacity-40" : "",
         ].join(" ")}
@@ -90,7 +90,7 @@ export function WeekView({ cursor, events, onDayClick, onEventClick }: Props) {
                   e.stopPropagation();
                   onEventClick(ev);
                 }}
-                className={`rounded-sm border-l-[3px] px-2 py-1.5 text-left leading-[1.3] ${CAT_CLASSES[t.cat]}`}
+                className={`rounded-sm border-l-[3px] px-2 py-1.5 text-left leading-[1.3] print:rounded-none print:border print:border-[#888] print:bg-white print:text-black ${CAT_CLASSES[t.cat]}`}
               >
                 <div className="mb-0.5 text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-muted">
                   {t.emoji} {timeStr}
@@ -105,7 +105,7 @@ export function WeekView({ cursor, events, onDayClick, onEventClick }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-[10px] border-[1.5px] border-ink bg-white shadow-card">
+    <div className="overflow-hidden rounded-[10px] border-[1.5px] border-ink bg-white shadow-card print:break-inside-avoid print:rounded-none print:border print:border-black print:shadow-none">
       <div className="grid grid-cols-7">{days}</div>
     </div>
   );

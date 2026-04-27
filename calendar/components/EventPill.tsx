@@ -27,7 +27,7 @@ export function EventPill({ event, onClick }: Props) {
         e.stopPropagation();
         onClick?.(event);
       }}
-      className={`flex w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-pill border-l-[3px] px-1.5 py-[3px] text-left text-[11px] font-medium leading-[1.25] text-ink transition-transform duration-100 hover:translate-x-0.5 ${CAT_CLASSES[type.cat]}`}
+      className={`flex w-full items-center gap-1 overflow-hidden whitespace-nowrap rounded-pill border-l-[3px] px-1.5 py-[3px] text-left text-[11px] font-medium leading-[1.25] text-ink transition-transform duration-100 hover:translate-x-0.5 print:rounded-none print:border print:border-[#888] print:bg-white print:text-[9px] print:text-black ${CAT_CLASSES[type.cat]}`}
     >
       <span className="text-[11px] leading-none">{type.emoji}</span>
       <span className="overflow-hidden text-ellipsis">{title}</span>

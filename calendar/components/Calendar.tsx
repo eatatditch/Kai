@@ -277,7 +277,7 @@ export function Calendar({ userEmail }: Props) {
 
       <Legend />
 
-      <p className="mt-5 text-center font-caveat text-base text-muted">
+      <p className="mt-5 text-center font-caveat text-base text-muted print:hidden">
         spread joy. build community. surf well.
       </p>
 
