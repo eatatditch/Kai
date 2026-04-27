@@ -22,6 +22,7 @@ import { Legend } from "./Legend";
 import { EventModal } from "./EventModal";
 import { Toast } from "./Toast";
 import { PrintBreakdown } from "./PrintBreakdown";
+import { NotesPanel } from "./NotesPanel";
 
 function clampMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -420,21 +421,28 @@ export function Calendar({ userEmail, isAdmin }: Props) {
         {periodLabel(view, cursor)}
       </div>
 
-      {view === "month" ? (
-        <MonthView
-          cursor={cursor}
-          events={visibleEvents}
-          onDayClick={onDayClick}
-          onEventClick={onEventClick}
-        />
-      ) : (
-        <WeekView
-          cursor={cursor}
-          events={visibleEvents}
-          onDayClick={onDayClick}
-          onEventClick={onEventClick}
-        />
-      )}
+      <div className="flex flex-col gap-5 xl:flex-row xl:items-start print:block">
+        <div className="min-w-0 xl:flex-1">
+          {view === "month" ? (
+            <MonthView
+              cursor={cursor}
+              events={visibleEvents}
+              onDayClick={onDayClick}
+              onEventClick={onEventClick}
+            />
+          ) : (
+            <WeekView
+              cursor={cursor}
+              events={visibleEvents}
+              onDayClick={onDayClick}
+              onEventClick={onEventClick}
+            />
+          )}
+        </div>
+        <div className="xl:w-[340px] xl:shrink-0 print:hidden">
+          <NotesPanel showToast={showToast} />
+        </div>
+      </div>
 
       <PrintBreakdown events={events} view={view} cursor={cursor} />
 
