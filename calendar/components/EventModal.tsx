@@ -1,17 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { CalendarEvent } from "@/types";
+import type { CalendarEvent, Recurrence } from "@/types";
 import { EVENT_TYPES, getType } from "@/lib/event-types";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
 import { ymd, parseYmd, formatTime } from "@/lib/date-utils";
+import {
+  RECURRENCE_OPTIONS,
+  generateOccurrenceDates,
+} from "@/lib/recurrence";
 
 type Props = {
   date: string;
   initialEvent: CalendarEvent | null;
   events: CalendarEvent[];
   onClose: () => void;
-  onSave: (event: CalendarEvent) => void;
+  onSave: (event: CalendarEvent, recurrence: Recurrence) => void;
   onDelete: (id: string) => void;
   onEdit: (event: CalendarEvent) => void;
   onCancelEdit: () => void;
@@ -48,6 +52,7 @@ export function EventModal({
   const [formDate, setFormDate] = useState(initialEvent?.date ?? date);
   const [time, setTime] = useState(initialEvent?.time ?? "");
   const [notes, setNotes] = useState(initialEvent?.notes ?? "");
+  const [recurrence, setRecurrence] = useState<Recurrence>("none");
 
   const titleRef = useRef<HTMLInputElement | null>(null);
 
@@ -70,6 +75,11 @@ export function EventModal({
 
   const isEdit = initialEvent !== null;
 
+  const occurrenceCount = useMemo(() => {
+    if (isEdit || recurrence === "none") return 1;
+    return generateOccurrenceDates(formDate, recurrence).length;
+  }, [isEdit, recurrence, formDate]);
+
   const handleSave = () => {
     const d = parseYmd(formDate);
     if (d < MIN_DATE || d > MAX_DATE) return;
@@ -83,7 +93,7 @@ export function EventModal({
       time: time || undefined,
       notes: notes.trim() || undefined,
     };
-    onSave(ev);
+    onSave(ev, isEdit ? "none" : recurrence);
   };
 
   const handleDelete = (ev: CalendarEvent) => {
@@ -254,6 +264,37 @@ export function EventModal({
                 />
               </div>
             </div>
+
+            {!isEdit && (
+              <div className="mb-3.5">
+                <label
+                  htmlFor="event-recurrence"
+                  className="mb-1 block text-[11px] font-bold uppercase tracking-[0.12em] text-muted"
+                >
+                  Repeat
+                </label>
+                <select
+                  id="event-recurrence"
+                  value={recurrence}
+                  onChange={(e) =>
+                    setRecurrence(e.target.value as Recurrence)
+                  }
+                  className="w-full rounded-sm border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink transition-colors duration-150 focus:border-orange focus:outline-none focus:ring-[3px] focus:ring-orange/15"
+                >
+                  {RECURRENCE_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+                {recurrence !== "none" && (
+                  <p className="mt-1 text-[11px] text-muted">
+                    Will create {occurrenceCount} event
+                    {occurrenceCount === 1 ? "" : "s"} through Jun 30, 2027.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="mb-3.5">
               <label

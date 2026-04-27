@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CalendarEvent, FilterKey, ViewMode } from "@/types";
+import type { CalendarEvent, FilterKey, Recurrence, ViewMode } from "@/types";
+import { generateOccurrenceDates } from "@/lib/recurrence";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
 import { startOfWeek, ymd } from "@/lib/date-utils";
 import { getType } from "@/lib/event-types";
@@ -219,9 +220,33 @@ export function Calendar({ userEmail, isAdmin }: Props) {
     setModal({ date: ymd(target), editId: null });
   };
 
-  const onSaveEvent = (ev: CalendarEvent) => {
+  const onSaveEvent = (ev: CalendarEvent, recurrence: Recurrence) => {
     const isUpdate = events.some((e) => e.id === ev.id);
     const snapshot = events;
+
+    if (!isUpdate && recurrence !== "none") {
+      const dates = generateOccurrenceDates(ev.date, recurrence);
+      const occurrences: CalendarEvent[] = dates.map((date, i) => ({
+        ...ev,
+        id: i === 0 ? ev.id : crypto.randomUUID(),
+        date,
+      }));
+      setEvents((prev) => [...prev, ...occurrences]);
+      setModal((prev) => (prev ? { date: ev.date, editId: null } : prev));
+
+      mergeEvents(occurrences)
+        .then(() => {
+          showToast(
+            `Added ${occurrences.length} event${occurrences.length === 1 ? "" : "s"}`,
+          );
+        })
+        .catch(() => {
+          setEvents(snapshot);
+          showToast("Save failed — changes rolled back");
+        });
+      return;
+    }
+
     setEvents((prev) =>
       isUpdate
         ? prev.map((e) => (e.id === ev.id ? ev : e))
