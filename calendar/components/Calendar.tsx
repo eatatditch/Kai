@@ -5,7 +5,12 @@ import type { CalendarEvent, FilterKey, ViewMode } from "@/types";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
 import { startOfWeek, ymd } from "@/lib/date-utils";
 import { getType } from "@/lib/event-types";
-import { fetchEvents, upsertEvent, deleteEventById } from "@/lib/events-api";
+import {
+  fetchEvents,
+  upsertEvent,
+  deleteEventById,
+  subscribeEvents,
+} from "@/lib/events-api";
 import { Header } from "./Header";
 import { FilterBar } from "./FilterBar";
 import { MonthView } from "./MonthView";
@@ -83,6 +88,24 @@ export function Calendar({ userEmail }: Props) {
       active = false;
     };
   }, [showToast]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeEvents((change) => {
+      if (change.kind === "upsert") {
+        const incoming = change.event;
+        setEvents((prev) => {
+          const idx = prev.findIndex((e) => e.id === incoming.id);
+          if (idx === -1) return [...prev, incoming];
+          const next = prev.slice();
+          next[idx] = incoming;
+          return next;
+        });
+      } else {
+        setEvents((prev) => prev.filter((e) => e.id !== change.id));
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (!modal) return;
