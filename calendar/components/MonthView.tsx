@@ -3,7 +3,7 @@ import { ymd, isSameDay, startOfWeek } from "@/lib/date-utils";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
 import { EventPill } from "./EventPill";
 
-const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAYS = ["Tue", "Wed", "Thu", "Fri", "Sat", "Sun", "Mon"];
 const MAX_PILLS = 4;
 
 type Props = {

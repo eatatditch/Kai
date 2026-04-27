@@ -11,9 +11,12 @@ export function parseYmd(s: string): Date {
   return new Date(y, m - 1, d);
 }
 
+export const WEEK_START = 2;
+
 export function startOfWeek(d: Date): Date {
   const r = new Date(d);
-  r.setDate(r.getDate() - r.getDay());
+  const offset = (r.getDay() - WEEK_START + 7) % 7;
+  r.setDate(r.getDate() - offset);
   r.setHours(0, 0, 0, 0);
   return r;
 }
