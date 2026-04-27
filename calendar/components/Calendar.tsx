@@ -20,6 +20,7 @@ import { WeekView } from "./WeekView";
 import { Legend } from "./Legend";
 import { EventModal } from "./EventModal";
 import { Toast } from "./Toast";
+import { PrintBreakdown } from "./PrintBreakdown";
 
 function clampMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1);
@@ -371,7 +372,7 @@ export function Calendar({ userEmail, isAdmin }: Props) {
   }, [modal, view, cursor]);
 
   return (
-    <div className="mx-auto max-w-[1400px] px-5 pt-6 pb-15">
+    <div className="mx-auto max-w-[1400px] px-5 pt-6 pb-15 print:max-w-none print:px-0 print:pt-0 print:pb-0">
       <Header
         view={view}
         prevDisabled={navDisabled.prev}
@@ -390,7 +391,7 @@ export function Calendar({ userEmail, isAdmin }: Props) {
 
       <FilterBar active={filters} onToggle={toggleFilter} />
 
-      <div className="mb-3 px-0 font-bebas text-[32px] tracking-[0.04em] text-navy">
+      <div className="mb-3 px-0 font-bebas text-[32px] tracking-[0.04em] text-navy print:mb-2 print:text-[20px] print:text-black">
         {periodLabel(view, cursor)}
       </div>
 
@@ -409,6 +410,8 @@ export function Calendar({ userEmail, isAdmin }: Props) {
           onEventClick={onEventClick}
         />
       )}
+
+      <PrintBreakdown events={events} view={view} cursor={cursor} />
 
       <Legend />
 
