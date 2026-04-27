@@ -58,6 +58,45 @@ export async function deleteEventById(id: string): Promise<void> {
   if (error) throw error;
 }
 
+function toDbPayload(e: CalendarEvent) {
+  return {
+    id: e.id,
+    date: e.date,
+    type: e.type,
+    title: e.title,
+    time: e.time ?? null,
+    notes: e.notes ?? null,
+  };
+}
+
+export async function mergeEvents(events: CalendarEvent[]): Promise<void> {
+  if (events.length === 0) return;
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("events")
+    .upsert(events.map(toDbPayload), {
+      onConflict: "id",
+      ignoreDuplicates: true,
+    });
+  if (error) throw error;
+}
+
+export async function replaceAllEvents(
+  events: CalendarEvent[],
+): Promise<void> {
+  const supabase = createClient();
+  const { error: deleteError } = await supabase
+    .from("events")
+    .delete()
+    .neq("id", "00000000-0000-0000-0000-000000000000");
+  if (deleteError) throw deleteError;
+  if (events.length === 0) return;
+  const { error: insertError } = await supabase
+    .from("events")
+    .insert(events.map(toDbPayload));
+  if (insertError) throw insertError;
+}
+
 export type EventChange =
   | { kind: "upsert"; event: CalendarEvent }
   | { kind: "delete"; id: string };
