@@ -95,7 +95,7 @@ export function Header({
             Content Calendar
           </h1>
           <span className="mt-1.5 text-[13px] font-medium text-muted print:hidden">
-            May 2026 onward · Brand &amp; Marketing
+            April 2026 onward · Brand &amp; Marketing
           </span>
         </Link>
 
