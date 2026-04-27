@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { Calendar } from "@/components/Calendar";
 import { createClient } from "@/lib/supabase/server";
-import { isAllowed } from "@/lib/constants";
+import { isEmailAllowlisted } from "@/lib/allowlist";
+import { isAdmin } from "@/lib/constants";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -11,10 +12,13 @@ export default async function Home() {
 
   if (!user) redirect("/login");
 
-  if (!isAllowed(user.email)) {
+  const allowed = await isEmailAllowlisted(user.email);
+  if (!allowed) {
     await supabase.auth.signOut();
     redirect("/login?error=unauthorized");
   }
 
-  return <Calendar userEmail={user.email!} />;
+  return (
+    <Calendar userEmail={user.email!} isAdmin={isAdmin(user.email)} />
+  );
 }

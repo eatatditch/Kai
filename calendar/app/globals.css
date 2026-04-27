@@ -86,3 +86,8 @@ body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
+
+@media print {
+  body { background: white; }
+  @page { size: landscape; margin: 0.4in; }
+}

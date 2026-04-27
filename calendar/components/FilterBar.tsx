@@ -10,7 +10,7 @@ export function FilterBar({ active, onToggle }: Props) {
   const allOn = active.has("all");
 
   return (
-    <div className="mb-[18px] flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-line bg-white px-3.5 py-3">
+    <div className="mb-[18px] flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-line bg-white px-3.5 py-3 print:hidden">
       <span className="mr-1 text-[11px] font-bold uppercase tracking-[0.15em] text-muted">
         Filter
       </span>

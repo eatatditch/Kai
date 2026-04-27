@@ -57,3 +57,32 @@ export async function deleteEventById(id: string): Promise<void> {
   const { error } = await supabase.from("events").delete().eq("id", id);
   if (error) throw error;
 }
+
+export type EventChange =
+  | { kind: "upsert"; event: CalendarEvent }
+  | { kind: "delete"; id: string };
+
+export function subscribeEvents(
+  onChange: (change: EventChange) => void,
+): () => void {
+  const supabase = createClient();
+  const channel = supabase
+    .channel("events-changes")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "events" },
+      (payload) => {
+        if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+          onChange({ kind: "upsert", event: fromDb(payload.new as DbEvent) });
+        } else if (payload.eventType === "DELETE") {
+          const old = payload.old as Partial<DbEvent>;
+          if (old.id) onChange({ kind: "delete", id: old.id });
+        }
+      },
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}

@@ -21,7 +21,7 @@ const MIN_YMD = ymd(MIN_DATE);
 const MAX_YMD = ymd(MAX_DATE);
 
 function uid(): string {
-  return `ev_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  return crypto.randomUUID();
 }
 
 function sortEvents(list: CalendarEvent[]): CalendarEvent[] {

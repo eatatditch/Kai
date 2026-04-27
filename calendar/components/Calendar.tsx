@@ -5,7 +5,12 @@ import type { CalendarEvent, FilterKey, ViewMode } from "@/types";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
 import { startOfWeek, ymd } from "@/lib/date-utils";
 import { getType } from "@/lib/event-types";
-import { fetchEvents, upsertEvent, deleteEventById } from "@/lib/events-api";
+import {
+  fetchEvents,
+  upsertEvent,
+  deleteEventById,
+  subscribeEvents,
+} from "@/lib/events-api";
 import { Header } from "./Header";
 import { FilterBar } from "./FilterBar";
 import { MonthView } from "./MonthView";
@@ -45,9 +50,10 @@ type ModalState = { date: string; editId: string | null } | null;
 
 type Props = {
   userEmail: string;
+  isAdmin: boolean;
 };
 
-export function Calendar({ userEmail }: Props) {
+export function Calendar({ userEmail, isAdmin }: Props) {
   const [view, setView] = useState<ViewMode>("month");
   const [cursor, setCursor] = useState<Date>(new Date(2026, 4, 1));
   const [filters, setFilters] = useState<Set<FilterKey>>(
@@ -83,6 +89,24 @@ export function Calendar({ userEmail }: Props) {
       active = false;
     };
   }, [showToast]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeEvents((change) => {
+      if (change.kind === "upsert") {
+        const incoming = change.event;
+        setEvents((prev) => {
+          const idx = prev.findIndex((e) => e.id === incoming.id);
+          if (idx === -1) return [...prev, incoming];
+          const next = prev.slice();
+          next[idx] = incoming;
+          return next;
+        });
+      } else {
+        setEvents((prev) => prev.filter((e) => e.id !== change.id));
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     if (!modal) return;
@@ -220,6 +244,7 @@ export function Calendar({ userEmail }: Props) {
         prevDisabled={navDisabled.prev}
         nextDisabled={navDisabled.next}
         userEmail={userEmail}
+        isAdmin={isAdmin}
         onViewChange={setView}
         onPrev={() => navigate(-1)}
         onToday={goToday}
@@ -254,7 +279,7 @@ export function Calendar({ userEmail }: Props) {
 
       <Legend />
 
-      <p className="mt-5 text-center font-caveat text-base text-muted">
+      <p className="mt-5 text-center font-caveat text-base text-muted print:hidden">
         spread joy. build community. surf well.
       </p>
 

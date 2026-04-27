@@ -54,11 +54,11 @@ export function MonthView({ cursor, events, onDayClick, onEventClick }: Props) {
           onDayClick(dateStr);
         }}
         className={[
-          "relative flex min-h-[120px] cursor-pointer flex-col border-b border-r border-line-soft px-[7px] pt-1.5 pb-2 transition-colors duration-[120ms] [&:nth-child(7n)]:border-r-0",
+          "relative flex min-h-[120px] cursor-pointer flex-col border-b border-r border-line-soft px-[7px] pt-1.5 pb-2 transition-colors duration-[120ms] [&:nth-child(7n)]:border-r-0 print:min-h-[90px] print:break-inside-avoid",
           isToday
-            ? "bg-sage-tint hover:bg-[#d6e3d3]"
+            ? "bg-sage-tint hover:bg-[#d6e3d3] print:bg-white"
             : isOutside
-              ? "bg-[#faf5e8] hover:bg-[#f5edd5]"
+              ? "bg-[#faf5e8] hover:bg-[#f5edd5] print:bg-white print:text-[#aaa]"
               : "bg-white hover:bg-orange-tint",
         ].join(" ")}
       >
@@ -103,12 +103,12 @@ export function MonthView({ cursor, events, onDayClick, onEventClick }: Props) {
   }
 
   return (
-    <div className="overflow-hidden rounded-[10px] border-[1.5px] border-ink bg-white shadow-card">
-      <div className="grid grid-cols-7 bg-navy">
+    <div className="overflow-hidden rounded-[10px] border-[1.5px] border-ink bg-white shadow-card print:break-inside-avoid print:rounded-none print:border print:border-black print:shadow-none">
+      <div className="grid grid-cols-7 bg-navy print:bg-white print:border-b print:border-black">
         {WEEKDAYS.map((d) => (
           <div
             key={d}
-            className="border-r border-white/10 px-3 py-2.5 text-center font-bebas text-[15px] tracking-[0.12em] text-cream last:border-r-0"
+            className="border-r border-white/10 px-3 py-2.5 text-center font-bebas text-[15px] tracking-[0.12em] text-cream last:border-r-0 print:border-r print:border-[#888] print:text-black"
           >
             {d}
           </div>

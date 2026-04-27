@@ -3,7 +3,6 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { isAllowed } from "@/lib/constants";
 
 function LoginForm() {
   const router = useRouter();
@@ -21,17 +20,11 @@ function LoginForm() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    const trimmed = email.trim().toLowerCase();
-    if (!isAllowed(trimmed)) {
-      setError("This email isn't authorized to access the calendar.");
-      return;
-    }
-
     setLoading(true);
+
     const supabase = createClient();
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: trimmed,
+      email: email.trim().toLowerCase(),
       password,
     });
     if (signInError) {

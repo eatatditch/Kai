@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ViewMode } from "@/types";
 
 type Props = {
@@ -5,6 +6,7 @@ type Props = {
   prevDisabled: boolean;
   nextDisabled: boolean;
   userEmail: string;
+  isAdmin: boolean;
   onViewChange: (v: ViewMode) => void;
   onPrev: () => void;
   onToday: () => void;
@@ -31,6 +33,7 @@ export function Header({
   prevDisabled,
   nextDisabled,
   userEmail,
+  isAdmin,
   onViewChange,
   onPrev,
   onToday,
@@ -42,8 +45,19 @@ export function Header({
 }: Props) {
   return (
     <>
-      <div className="mb-2 flex justify-end gap-3 text-[12px] text-muted">
+      <div className="mb-2 flex justify-end gap-3 text-[12px] text-muted print:hidden">
         <span>{userEmail}</span>
+        {isAdmin && (
+          <>
+            <span aria-hidden="true">·</span>
+            <Link
+              href="/admin"
+              className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
+            >
+              Manage users
+            </Link>
+          </>
+        )}
         <span aria-hidden="true">·</span>
         <form action="/auth/signout" method="post" className="inline">
           <button
@@ -55,19 +69,23 @@ export function Header({
         </form>
       </div>
       <header className="mb-[22px] flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-5">
-        <div className="flex flex-col">
+        <Link
+          href="/"
+          className="group flex flex-col no-underline outline-none"
+          aria-label="Go to calendar home"
+        >
           <span className="mb-1 text-[11px] font-bold uppercase tracking-[0.22em] text-orange">
             Ditch Hospitality Group
           </span>
-          <h1 className="m-0 font-bebas text-[clamp(40px,5vw,60px)] leading-[0.95] tracking-[0.01em] text-navy">
+          <h1 className="m-0 font-bebas text-[clamp(40px,5vw,60px)] leading-[0.95] tracking-[0.01em] text-navy transition-colors duration-150 group-hover:text-orange">
             Content Calendar
           </h1>
           <span className="mt-1.5 text-[13px] font-medium text-muted">
             May 2026 — June 2027 · Brand &amp; Marketing
           </span>
-        </div>
+        </Link>
 
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div className="flex flex-wrap items-center gap-2.5 print:hidden">
         <div className={groupCls}>
           <button
             type="button"
