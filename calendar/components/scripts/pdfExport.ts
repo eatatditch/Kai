@@ -1,6 +1,5 @@
 "use client";
 
-import { createElement } from "react";
 import type { ScriptVariant } from "@/lib/scripts/types";
 import { estimateRuntimeSeconds } from "@/lib/scripts/format";
 
@@ -20,11 +19,11 @@ export async function exportScriptPdf(
   index: number,
 ): Promise<void> {
   const { pdf } = await import("@react-pdf/renderer");
-  const { ScriptPdfDoc } = await import("./ScriptPdfDoc");
+  const { buildScriptPdf } = await import("./ScriptPdfDoc");
   const runtime =
     variant.runtime_estimate_seconds || estimateRuntimeSeconds(variant.script);
   const blob = await pdf(
-    createElement(ScriptPdfDoc, {
+    buildScriptPdf({
       variants: [variant],
       meta: {
         runtime,
@@ -44,9 +43,9 @@ export async function exportAllScriptsPdf(
   variants: ScriptVariant[],
 ): Promise<void> {
   const { pdf } = await import("@react-pdf/renderer");
-  const { ScriptPdfDoc } = await import("./ScriptPdfDoc");
+  const { buildScriptPdf } = await import("./ScriptPdfDoc");
   const blob = await pdf(
-    createElement(ScriptPdfDoc, {
+    buildScriptPdf({
       variants,
       meta: { date: new Date().toISOString().slice(0, 10) },
     }),

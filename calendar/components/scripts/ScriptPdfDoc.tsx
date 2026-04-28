@@ -95,7 +95,9 @@ type DocProps = {
   meta: { date: string; runtime?: number; variantNumber?: number };
 };
 
-export function ScriptPdfDoc({ variants, meta }: DocProps) {
+// Plain builder, not a React component — @react-pdf/renderer's `pdf()` wants a
+// ReactElement<DocumentProps>, not a FunctionComponentElement that wraps one.
+export function buildScriptPdf({ variants, meta }: DocProps) {
   return (
     <Document>
       {variants.map((v, i) => {
