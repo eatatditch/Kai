@@ -22,6 +22,8 @@ export type CalendarEvent = {
   title: string;
   time?: string;
   notes?: string;
+  /** Shared across all occurrences created from one recurring brief. */
+  series_id?: string;
 };
 
 export type FilterKey = Category | "all";
