@@ -15,6 +15,7 @@ import {
   replaceAllEvents,
 } from "@/lib/events-api";
 import { fetchEventIdsWithScripts } from "@/lib/scripts/api";
+import { fetchEventIdsWithCompanions } from "@/lib/scripts/companion-api";
 import { createClient } from "@/lib/supabase/client";
 import { AppShell } from "./AppShell";
 import { CalendarToolbar } from "./Header";
@@ -152,31 +153,45 @@ export function Calendar({ userEmail, isAdmin }: Props) {
     return unsubscribe;
   }, []);
 
-  // Track which events have at least one attached script so the calendar
-  // pills can show a 📝 marker. Refetch on any change to generated_scripts.
+  // Track which events have at least one attached AI output (script,
+  // captions, email, or SMS) so the calendar pills can show a 📝 marker.
   useEffect(() => {
     let active = true;
-    fetchEventIdsWithScripts()
-      .then((set) => {
-        if (active) setScriptedEventIds(set);
-      })
-      .catch(() => {
-        // soft-fail: badges just don't show
-      });
+
+    const refresh = () =>
+      Promise.all([fetchEventIdsWithScripts(), fetchEventIdsWithCompanions()])
+        .then(([a, b]) => {
+          if (!active) return;
+          const merged = new Set<string>(a);
+          for (const id of b) merged.add(id);
+          setScriptedEventIds(merged);
+        })
+        .catch(() => {});
+
+    refresh();
 
     const supabase = createClient();
     const channel = supabase
-      .channel("generated-scripts-watch")
+      .channel("ai-outputs-watch")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "generated_scripts" },
-        () => {
-          fetchEventIdsWithScripts()
-            .then((set) => {
-              if (active) setScriptedEventIds(set);
-            })
-            .catch(() => {});
-        },
+        () => refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "generated_captions" },
+        () => refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "generated_emails" },
+        () => refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "generated_sms" },
+        () => refresh(),
       )
       .subscribe();
 

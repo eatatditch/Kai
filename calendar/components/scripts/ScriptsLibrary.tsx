@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../AppShell";
 import { Toast } from "../Toast";
+import { ScriptsTabsNav } from "./ScriptsTabsNav";
 import {
   deleteGeneratedScript,
   fetchGeneratedScripts,
@@ -123,22 +124,15 @@ export function ScriptsLibrary({ userEmail, isAdmin }: Props) {
         subtitle="Saved variants from past briefs"
         printHidden
         actions={
-          <>
-            <Link
-              href="/scripts/voices"
-              className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-ink bg-white px-3.5 py-2.5 font-dm text-[13px] font-semibold text-ink shadow-card transition-colors duration-150 hover:bg-sand"
-            >
-              Voices
-            </Link>
-            <Link
-              href="/scripts"
-              className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-3.5 py-2.5 font-dm text-[13px] font-semibold text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f]"
-            >
-              ＋ New Brief
-            </Link>
-          </>
+          <Link
+            href="/scripts"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-3.5 py-2.5 font-dm text-[13px] font-semibold text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f]"
+          >
+            ＋ New Brief
+          </Link>
         }
       />
+      <ScriptsTabsNav active="library" />
 
       {loading ? (
         <p className="text-[14px] text-muted">Loading…</p>
@@ -262,6 +256,7 @@ function LibraryRow({
               >
                 Export all to PDF
               </button>
+              <CompanionLinks scriptId={item.id} item={item} />
               <EventLinkPicker
                 events={events}
                 currentEventId={item.event_id}
@@ -306,6 +301,45 @@ function LibraryRow({
         )}
       </article>
     </li>
+  );
+}
+
+function CompanionLinks({
+  scriptId,
+  item,
+}: {
+  scriptId: string;
+  item: GeneratedScript;
+}) {
+  const baseParams = useMemo(() => {
+    const p = new URLSearchParams();
+    p.set("fromScriptId", scriptId);
+    if (item.event_id) p.set("eventId", item.event_id);
+    if (item.profile_id) p.set("profile", item.profile_id);
+    if (item.topic) p.set("topic", item.topic);
+    const facts = item.brief_json?.facts;
+    if (facts) p.set("facts", facts);
+    return p.toString();
+  }, [scriptId, item]);
+
+  const linkCls =
+    "rounded-sm border border-line bg-white px-2.5 py-1.5 text-[12px] font-semibold text-ink transition-colors duration-150 hover:bg-sand";
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="text-[10px] font-bold uppercase tracking-[0.1em] text-muted">
+        Make
+      </span>
+      <Link href={`/scripts/captions?${baseParams}`} className={linkCls}>
+        Captions
+      </Link>
+      <Link href={`/scripts/email?${baseParams}`} className={linkCls}>
+        Email
+      </Link>
+      <Link href={`/scripts/sms?${baseParams}`} className={linkCls}>
+        SMS
+      </Link>
+    </div>
   );
 }
 

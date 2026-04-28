@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AppShell } from "../AppShell";
 import { Toast } from "../Toast";
+import { ScriptsTabsNav } from "./ScriptsTabsNav";
 import {
   deleteVoiceProfile,
   fetchVoiceProfiles,
@@ -77,22 +78,15 @@ export function VoicesIndex({ userEmail, isAdmin }: Props) {
         subtitle="Train the generator on your existing scripts"
         printHidden
         actions={
-          <>
-            <Link
-              href="/scripts"
-              className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-ink bg-white px-3.5 py-2.5 font-dm text-[13px] font-semibold text-ink shadow-card transition-colors duration-150 hover:bg-sand"
-            >
-              ← Generator
-            </Link>
-            <Link
-              href="/scripts/voices/new"
-              className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-3.5 py-2.5 font-dm text-[13px] font-semibold text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f]"
-            >
-              <span className="text-sm leading-none">＋</span> New Voice
-            </Link>
-          </>
+          <Link
+            href="/scripts/voices/new"
+            className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-3.5 py-2.5 font-dm text-[13px] font-semibold text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f]"
+          >
+            <span className="text-sm leading-none">＋</span> New Voice
+          </Link>
         }
       />
+      <ScriptsTabsNav active="voices" />
 
       {loading ? (
         <p className="text-[14px] text-muted">Loading…</p>

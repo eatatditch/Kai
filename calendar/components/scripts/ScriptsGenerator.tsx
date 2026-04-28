@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AppShell } from "../AppShell";
 import { Toast } from "../Toast";
+import { ScriptsTabsNav } from "./ScriptsTabsNav";
 import {
   REFERENCE_VIBES,
   SCRIPT_BRANDS,
@@ -384,23 +385,8 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
         title="Scripts"
         subtitle="Short-form video ad scripts in the house voice"
         printHidden
-        actions={
-          <>
-            <Link
-              href="/scripts/voices"
-              className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-ink bg-white px-3.5 py-2.5 font-dm text-[13px] font-semibold text-ink shadow-card transition-colors duration-150 hover:bg-sand"
-            >
-              Voices
-            </Link>
-            <Link
-              href="/scripts/library"
-              className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-ink bg-white px-3.5 py-2.5 font-dm text-[13px] font-semibold text-ink shadow-card transition-colors duration-150 hover:bg-sand"
-            >
-              Library
-            </Link>
-          </>
-        }
       />
+      <ScriptsTabsNav active="scripts" />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,420px)_minmax(0,1fr)]">
         <section

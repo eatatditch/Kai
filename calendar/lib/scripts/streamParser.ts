@@ -112,12 +112,19 @@ export function makeStreamParser() {
       let inProgress: ParsedVariant | null = null;
       if (state.current) {
         const draft = { ...state.current };
-        if (state.field === "script" && state.buffer) {
-          draft.script += (draft.script ? "\n" : "") + state.buffer;
-        } else if (state.field === "name" && state.buffer) {
-          draft.name += state.buffer;
-        } else if (state.field === "angle" && state.buffer) {
-          draft.angle += state.buffer;
+        // Don't fold a buffer that's starting a new label into the prior
+        // field — avoids the brief "...DisclaimerANGLE: " glitch.
+        const startsNewLabel =
+          state.buffer.length > 0 &&
+          /^(NAME|ANGLE|RUNTIME|SCRIPT)\s*:/i.test(state.buffer);
+        if (!startsNewLabel) {
+          if (state.field === "script" && state.buffer) {
+            draft.script += (draft.script ? "\n" : "") + state.buffer;
+          } else if (state.field === "name" && state.buffer) {
+            draft.name += state.buffer;
+          } else if (state.field === "angle" && state.buffer) {
+            draft.angle += state.buffer;
+          }
         }
         inProgress = {
           name: draft.name,
