@@ -9,6 +9,7 @@ const MAX_PILLS = 4;
 type Props = {
   cursor: Date;
   events: CalendarEvent[];
+  scriptedEventIds?: Set<string>;
   onDayClick: (dateStr: string) => void;
   onEventClick: (event: CalendarEvent) => void;
 };
@@ -24,7 +25,13 @@ function eventsForDate(all: CalendarEvent[], dateStr: string): CalendarEvent[] {
   return list;
 }
 
-export function MonthView({ cursor, events, onDayClick, onEventClick }: Props) {
+export function MonthView({
+  cursor,
+  events,
+  scriptedEventIds,
+  onDayClick,
+  onEventClick,
+}: Props) {
   const y = cursor.getFullYear();
   const m = cursor.getMonth();
   const firstOfMonth = new Date(y, m, 1);
@@ -79,7 +86,11 @@ export function MonthView({ cursor, events, onDayClick, onEventClick }: Props) {
         <div className="flex flex-col gap-[3px] overflow-hidden print:gap-px">
           {visible.map((ev) => (
             <div key={ev.id} data-event-pill>
-              <EventPill event={ev} onClick={onEventClick} />
+              <EventPill
+                event={ev}
+                hasScript={scriptedEventIds?.has(ev.id) ?? false}
+                onClick={onEventClick}
+              />
             </div>
           ))}
           {overflow > 0 && (

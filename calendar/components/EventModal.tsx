@@ -1,14 +1,31 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarEvent, Recurrence } from "@/types";
-import { EVENT_TYPES, getType } from "@/lib/event-types";
+import {
+  EVENT_TYPES,
+  getType,
+  isScriptableEventType,
+} from "@/lib/event-types";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
 import { ymd, parseYmd, formatTime } from "@/lib/date-utils";
 import {
   RECURRENCE_OPTIONS,
   generateOccurrenceDates,
 } from "@/lib/recurrence";
+import { fetchGeneratedScriptsForEvent } from "@/lib/scripts/api";
+import {
+  fetchCaptionsForEvent,
+  fetchEmailsForEvent,
+  fetchSmsForEvent,
+} from "@/lib/scripts/companion-api";
+import type { GeneratedScript } from "@/lib/scripts/types";
+import type {
+  GeneratedCaptions,
+  GeneratedEmail,
+  GeneratedSms,
+} from "@/lib/scripts/companion-types";
 
 type Props = {
   date: string;
@@ -74,6 +91,70 @@ export function EventModal({
   });
 
   const isEdit = initialEvent !== null;
+  const showScriptPanel = isEdit && initialEvent
+    ? isScriptableEventType(initialEvent.type)
+    : false;
+
+  const [attachedScripts, setAttachedScripts] = useState<GeneratedScript[]>([]);
+  const [attachedCaptions, setAttachedCaptions] = useState<GeneratedCaptions[]>(
+    [],
+  );
+  const [attachedEmails, setAttachedEmails] = useState<GeneratedEmail[]>([]);
+  const [attachedSms, setAttachedSms] = useState<GeneratedSms[]>([]);
+  const [loadingScripts, setLoadingScripts] = useState(false);
+
+  useEffect(() => {
+    if (!showScriptPanel || !initialEvent) {
+      setAttachedScripts([]);
+      setAttachedCaptions([]);
+      setAttachedEmails([]);
+      setAttachedSms([]);
+      return;
+    }
+    let active = true;
+    setLoadingScripts(true);
+    Promise.all([
+      fetchGeneratedScriptsForEvent(initialEvent.id).catch(() => []),
+      fetchCaptionsForEvent(initialEvent.id).catch(() => []),
+      fetchEmailsForEvent(initialEvent.id).catch(() => []),
+      fetchSmsForEvent(initialEvent.id).catch(() => []),
+    ])
+      .then(([scripts, caps, emails, sms]) => {
+        if (!active) return;
+        setAttachedScripts(scripts);
+        setAttachedCaptions(caps);
+        setAttachedEmails(emails);
+        setAttachedSms(sms);
+      })
+      .finally(() => {
+        if (active) setLoadingScripts(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [showScriptPanel, initialEvent]);
+
+  const generateScriptHref = useMemo(() => {
+    if (!isEdit || !initialEvent) return null;
+    const params = new URLSearchParams();
+    params.set("eventId", initialEvent.id);
+    if (initialEvent.title) params.set("topic", initialEvent.title);
+    const factsBits: string[] = [];
+    const niceDate = parseYmd(initialEvent.date).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    factsBits.push(`Date: ${niceDate}`);
+    if (initialEvent.time) {
+      factsBits.push(`Time: ${formatTime(initialEvent.time)}`);
+    }
+    if (initialEvent.notes) factsBits.push(initialEvent.notes);
+    params.set("facts", factsBits.join("\n"));
+    params.set("prefill", "1");
+    return `/scripts?${params.toString()}`;
+  }, [isEdit, initialEvent]);
 
   const occurrenceCount = useMemo(() => {
     if (isEdit || recurrence === "none") return 1;
@@ -312,6 +393,109 @@ export function EventModal({
                 className="min-h-[60px] w-full resize-y rounded-sm border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink transition-colors duration-150 focus:border-orange focus:outline-none focus:ring-[3px] focus:ring-orange/15"
               />
             </div>
+
+            {showScriptPanel && initialEvent && generateScriptHref && (
+              <div className="mb-4 rounded-sm border border-line bg-cream p-3">
+                <div className="mb-2 flex items-baseline justify-between gap-2">
+                  <h5 className="m-0 font-bebas text-[14px] tracking-[0.1em] text-navy">
+                    AI OUTPUTS
+                  </h5>
+                  <div className="flex flex-wrap gap-1">
+                    <Link
+                      href={generateScriptHref}
+                      className="rounded-sm border border-orange bg-orange px-2 py-1 text-[11px] font-semibold text-white transition-colors duration-150 hover:bg-[#b8541f]"
+                    >
+                      + Script
+                    </Link>
+                    <Link
+                      href={generateScriptHref.replace("/scripts?", "/scripts/captions?")}
+                      className="rounded-sm border border-line bg-white px-2 py-1 text-[11px] font-semibold text-ink hover:bg-sand"
+                    >
+                      + Captions
+                    </Link>
+                    <Link
+                      href={generateScriptHref.replace("/scripts?", "/scripts/email?")}
+                      className="rounded-sm border border-line bg-white px-2 py-1 text-[11px] font-semibold text-ink hover:bg-sand"
+                    >
+                      + Email
+                    </Link>
+                    <Link
+                      href={generateScriptHref.replace("/scripts?", "/scripts/sms?")}
+                      className="rounded-sm border border-line bg-white px-2 py-1 text-[11px] font-semibold text-ink hover:bg-sand"
+                    >
+                      + SMS
+                    </Link>
+                  </div>
+                </div>
+                {loadingScripts ? (
+                  <p className="m-0 text-[12px] text-muted">Loading…</p>
+                ) : attachedScripts.length === 0 &&
+                  attachedCaptions.length === 0 &&
+                  attachedEmails.length === 0 &&
+                  attachedSms.length === 0 ? (
+                  <p className="m-0 text-[12px] text-muted">
+                    Nothing attached yet. Generate something to draft copy
+                    for this {getType(initialEvent.type).label.toLowerCase()}.
+                  </p>
+                ) : (
+                  <ul className="m-0 flex flex-col gap-1.5">
+                    {attachedScripts.map((s) => (
+                      <li key={s.id}>
+                        <Link
+                          href={`/scripts/library?open=${s.id}`}
+                          className="flex items-center justify-between gap-3 rounded-sm border border-line bg-white px-2.5 py-1.5 text-[12px] text-ink transition-colors duration-150 hover:border-ink hover:bg-sand"
+                        >
+                          <span className="truncate">
+                            🎬 {s.topic || "Untitled brief"}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted">
+                            {s.variants_json.length} variant
+                            {s.variants_json.length === 1 ? "" : "s"}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                    {attachedCaptions.map((c) => (
+                      <li key={c.id}>
+                        <div className="flex items-center justify-between gap-3 rounded-sm border border-line bg-white px-2.5 py-1.5 text-[12px] text-ink">
+                          <span className="truncate">
+                            📷 {c.topic || "Captions"}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted">
+                            {c.variants_json.length} variant
+                            {c.variants_json.length === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                    {attachedEmails.map((e) => (
+                      <li key={e.id}>
+                        <div className="flex items-center justify-between gap-3 rounded-sm border border-line bg-white px-2.5 py-1.5 text-[12px] text-ink">
+                          <span className="truncate">
+                            📧 {e.output_json?.subject || "Email"}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted">
+                            email
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                    {attachedSms.map((s) => (
+                      <li key={s.id}>
+                        <div className="flex items-center justify-between gap-3 rounded-sm border border-line bg-white px-2.5 py-1.5 text-[12px] text-ink">
+                          <span className="truncate">
+                            💬 {s.topic || "SMS"}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted">
+                            {s.variants_json.length} sms
+                          </span>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-1.5">
               {isEdit && (

@@ -14,6 +14,9 @@ import {
   mergeEvents,
   replaceAllEvents,
 } from "@/lib/events-api";
+import { fetchEventIdsWithScripts } from "@/lib/scripts/api";
+import { fetchEventIdsWithCompanions } from "@/lib/scripts/companion-api";
+import { createClient } from "@/lib/supabase/client";
 import { AppShell } from "./AppShell";
 import { CalendarToolbar } from "./Header";
 import { FilterBar } from "./FilterBar";
@@ -99,6 +102,9 @@ export function Calendar({ userEmail, isAdmin }: Props) {
     () => new Set<FilterKey>(["all"]),
   );
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [scriptedEventIds, setScriptedEventIds] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
   const [modal, setModal] = useState<ModalState>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,6 +151,54 @@ export function Calendar({ userEmail, isAdmin }: Props) {
       }
     });
     return unsubscribe;
+  }, []);
+
+  // Track which events have at least one attached AI output (script,
+  // captions, email, or SMS) so the calendar pills can show a 📝 marker.
+  useEffect(() => {
+    let active = true;
+
+    const refresh = () =>
+      Promise.all([fetchEventIdsWithScripts(), fetchEventIdsWithCompanions()])
+        .then(([a, b]) => {
+          if (!active) return;
+          const merged = new Set<string>(a);
+          for (const id of b) merged.add(id);
+          setScriptedEventIds(merged);
+        })
+        .catch(() => {});
+
+    refresh();
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("ai-outputs-watch")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "generated_scripts" },
+        () => refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "generated_captions" },
+        () => refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "generated_emails" },
+        () => refresh(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "generated_sms" },
+        () => refresh(),
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -440,6 +494,7 @@ export function Calendar({ userEmail, isAdmin }: Props) {
             <MonthView
               cursor={cursor}
               events={visibleEvents}
+              scriptedEventIds={scriptedEventIds}
               onDayClick={onDayClick}
               onEventClick={onEventClick}
             />
@@ -447,6 +502,7 @@ export function Calendar({ userEmail, isAdmin }: Props) {
             <WeekView
               cursor={cursor}
               events={visibleEvents}
+              scriptedEventIds={scriptedEventIds}
               onDayClick={onDayClick}
               onEventClick={onEventClick}
             />

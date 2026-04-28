@@ -3,24 +3,10 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAllowlistedUser } from "@/lib/scripts/auth";
 import { BASE_SYSTEM_PROMPT, SCRIPT_MODEL } from "@/lib/scripts/prompts";
-import type {
-  GenerateResponse,
-  ScriptBrief,
-  ScriptVariant,
-} from "@/lib/scripts/types";
+import type { ScriptBrief } from "@/lib/scripts/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function safeJsonExtract(text: string): unknown {
-  const cleaned = text.replace(/```json|```/g, "").trim();
-  const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end === -1) {
-    throw new Error("No JSON object in model output.");
-  }
-  return JSON.parse(cleaned.slice(start, end + 1));
-}
 
 export async function POST(req: Request) {
   const auth = await requireAllowlistedUser();
@@ -81,7 +67,7 @@ ${JSON.stringify(profile.profile_json, null, 2)}
 
 When the base rules conflict with this profile, the profile wins for
 stylistic choices (vocabulary, cadence, signature moves). The base rules
-on output format (JSON, three variants, contrasting angles) still apply.
+on output format (delimited NAME/ANGLE/RUNTIME/SCRIPT blocks) still apply.
 
 ---
 
@@ -101,13 +87,29 @@ signatures.
   const fullSystem = BASE_SYSTEM_PROMPT + voiceBlock;
 
   const isRegen = typeof brief.regenerate_index === "number";
-  const variantInstruction = isRegen
-    ? `Regenerate ONLY ONE variant (the one at index ${brief.regenerate_index}).
-Return JSON in the same shape, but with exactly ONE entry in "variants".
+  const isAngleLock =
+    typeof brief.lock_angle === "object" && brief.lock_angle !== null;
+
+  let variantInstruction: string;
+  if (isAngleLock && brief.lock_angle) {
+    variantInstruction = `Generate THREE variants. All three must use this exact angle:
+
+NAME: ${brief.lock_angle.name}
+ANGLE: ${brief.lock_angle.angle}
+
+Keep the angle name and the angle description identical across all three.
+The three scripts must differ in their cadence, beat structure, word
+choices, and which mundane details they pull from the brief. They are
+three drafts of the SAME angle, not three drafts of the same script.`;
+  } else if (isRegen) {
+    variantInstruction = `Regenerate ONLY ONE variant. Output exactly ONE delimited block.
 The new variant's angle must differ from these existing angles, and from
 each other in tone or structure:
-${(brief.avoid_angles ?? []).map((a) => `- ${a}`).join("\n") || "(none provided)"}`
-    : `Generate three variants. The three variants must take three different angles.`;
+${(brief.avoid_angles ?? []).map((a) => `- ${a}`).join("\n") || "(none provided)"}`;
+  } else {
+    variantInstruction =
+      "Generate three variants. The three variants must take three different angles.";
+  }
 
   const brandLabel =
     brief.brand === "Other" && brief.brand_other
@@ -127,37 +129,45 @@ Spice level (1-5): ${brief.spice}
 Lock-in: ${brief.lockin || "n/a"}
 
 ${variantInstruction}
-Return JSON only.`;
 
-  try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const response = await client.messages.create({
-      model: SCRIPT_MODEL,
-      max_tokens: 4096,
-      system: fullSystem,
-      messages: [{ role: "user", content: userMessage }],
-    });
+Output the delimited blocks only. No prose around them.`;
 
-    const text = response.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b as { text: string }).text)
-      .join("");
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-    const parsed = safeJsonExtract(text) as GenerateResponse;
-    if (!Array.isArray(parsed.variants)) {
-      throw new Error("Model output missing variants array.");
-    }
+  const encoder = new TextEncoder();
 
-    const variants: ScriptVariant[] = parsed.variants.map((v) => ({
-      name: String(v.name ?? ""),
-      angle: String(v.angle ?? ""),
-      script: String(v.script ?? ""),
-      runtime_estimate_seconds: Number(v.runtime_estimate_seconds ?? 0) || 0,
-    }));
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        const messageStream = client.messages.stream({
+          model: SCRIPT_MODEL,
+          max_tokens: 4096,
+          system: fullSystem,
+          messages: [{ role: "user", content: userMessage }],
+        });
 
-    return NextResponse.json({ variants });
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Generation failed";
-    return NextResponse.json({ error: msg }, { status: 500 });
-  }
+        for await (const event of messageStream) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            controller.enqueue(encoder.encode(event.delta.text));
+          }
+        }
+        controller.close();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Generation failed";
+        controller.enqueue(encoder.encode(`\n[stream-error] ${msg}\n`));
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }

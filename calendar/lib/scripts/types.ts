@@ -29,6 +29,7 @@ export type ScriptBrief = {
   lockin?: string;
   regenerate_index?: number;
   avoid_angles?: string[];
+  lock_angle?: { name: string; angle: string };
 };
 
 export type ScriptVariant = {
@@ -78,6 +79,7 @@ export type ReferenceScript = {
 export type GeneratedScript = {
   id: string;
   profile_id: string | null;
+  event_id: string | null;
   brand: ScriptBrand | null;
   topic: string | null;
   length: ScriptLength | null;

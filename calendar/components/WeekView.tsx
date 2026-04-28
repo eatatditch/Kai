@@ -15,6 +15,7 @@ const CAT_CLASSES: Record<Category, string> = {
 type Props = {
   cursor: Date;
   events: CalendarEvent[];
+  scriptedEventIds?: Set<string>;
   onDayClick: (dateStr: string) => void;
   onEventClick: (event: CalendarEvent) => void;
 };
@@ -30,7 +31,13 @@ function eventsForDate(all: CalendarEvent[], dateStr: string): CalendarEvent[] {
   return list;
 }
 
-export function WeekView({ cursor, events, onDayClick, onEventClick }: Props) {
+export function WeekView({
+  cursor,
+  events,
+  scriptedEventIds,
+  onDayClick,
+  onEventClick,
+}: Props) {
   const ws = startOfWeek(cursor);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -81,6 +88,7 @@ export function WeekView({ cursor, events, onDayClick, onEventClick }: Props) {
             const t = getType(ev.type);
             const title = ev.title || t.label;
             const timeStr = ev.time ? formatTime(ev.time) : t.label;
+            const hasScript = scriptedEventIds?.has(ev.id) ?? false;
             return (
               <button
                 key={ev.id}
@@ -92,8 +100,15 @@ export function WeekView({ cursor, events, onDayClick, onEventClick }: Props) {
                 }}
                 className={`rounded-sm border-l-[3px] px-2 py-1.5 text-left leading-[1.3] print:rounded-none print:border print:border-[#888] print:bg-white print:text-black ${CAT_CLASSES[t.cat]}`}
               >
-                <div className="mb-0.5 text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-muted">
-                  {t.emoji} {timeStr}
+                <div className="mb-0.5 flex items-center gap-1 text-[10px] font-semibold uppercase leading-none tracking-[0.08em] text-muted">
+                  <span>
+                    {t.emoji} {timeStr}
+                  </span>
+                  {hasScript && (
+                    <span className="ml-auto print:hidden" aria-label="Has attached script">
+                      📝
+                    </span>
+                  )}
                 </div>
                 <div className="text-xs font-semibold text-ink">{title}</div>
               </button>
