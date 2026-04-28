@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import type { CalendarEvent, Note } from "@/types";
 import { MIN_DATE } from "@/lib/constants";
@@ -9,6 +8,7 @@ import { getType } from "@/lib/event-types";
 import { fetchEvents } from "@/lib/events-api";
 import { fetchNotes } from "@/lib/notes-api";
 import { getNoteCategory, NOTE_CATEGORIES } from "@/lib/note-categories";
+import { AppShell } from "./AppShell";
 import { MonthView } from "./MonthView";
 
 type Props = {
@@ -126,90 +126,49 @@ export function Reports({ userEmail, isAdmin }: Props) {
 
   return (
     <div className="mx-auto max-w-[1100px] px-5 pt-6 pb-15 print:max-w-none print:px-0 print:pt-0 print:pb-0">
-      <div className="mb-2 flex justify-end gap-3 text-[12px] text-muted print:hidden">
-        <span>{userEmail}</span>
-        {isAdmin && (
+      <AppShell
+        userEmail={userEmail}
+        isAdmin={isAdmin}
+        current="reports"
+        homeHref="/reports"
+        title="Quarterly Reports"
+        subtitle="Print-ready calendar, event schedule, and notes for any quarter"
+        printHidden
+        actions={
           <>
-            <span aria-hidden="true">·</span>
-            <Link
-              href="/admin"
-              className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
+            <div className="flex flex-col">
+              <label
+                htmlFor="quarter-pick"
+                className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-muted"
+              >
+                Quarter
+              </label>
+              <select
+                id="quarter-pick"
+                value={`${picked.year}-${picked.quarter}`}
+                onChange={(e) => {
+                  const [y, q] = e.target.value.split("-").map(Number);
+                  setPicked({ year: y, quarter: q as 1 | 2 | 3 | 4 });
+                }}
+                className="rounded-sm border-[1.5px] border-ink bg-white px-3 py-2.5 text-sm font-semibold text-ink shadow-card transition-colors duration-150 focus:border-orange focus:outline-none focus:ring-[3px] focus:ring-orange/15"
+              >
+                {quarterOptions.map((q) => (
+                  <option key={`${q.year}-${q.quarter}`} value={`${q.year}-${q.quarter}`}>
+                    {quarterLabel(q)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-3.5 py-2.5 font-dm text-[13px] font-semibold text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f]"
             >
-              Manage users
-            </Link>
+              <span className="text-sm leading-none">🖨</span> Print Report
+            </button>
           </>
-        )}
-        <span aria-hidden="true">·</span>
-        <Link
-          href="/"
-          className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
-        >
-          Calendar
-        </Link>
-        <span aria-hidden="true">·</span>
-        <Link
-          href="/notes"
-          className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
-        >
-          Notes
-        </Link>
-        <span aria-hidden="true">·</span>
-        <form action="/auth/signout" method="post" className="inline">
-          <button
-            type="submit"
-            className="cursor-pointer font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
-          >
-            Sign out
-          </button>
-        </form>
-      </div>
-
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-5 print:hidden">
-        <div className="flex flex-col">
-          <span className="mb-1 text-[11px] font-bold uppercase tracking-[0.22em] text-orange">
-            Ditch Hospitality Group
-          </span>
-          <h1 className="m-0 font-bebas text-[clamp(40px,5vw,60px)] leading-[0.95] tracking-[0.01em] text-navy">
-            Quarterly Reports
-          </h1>
-          <span className="mt-1.5 text-[13px] font-medium text-muted">
-            Print-ready calendar, event schedule, and notes for any quarter
-          </span>
-        </div>
-
-        <div className="flex items-end gap-2.5">
-          <div className="flex flex-col">
-            <label
-              htmlFor="quarter-pick"
-              className="mb-1 text-[11px] font-bold uppercase tracking-[0.12em] text-muted"
-            >
-              Quarter
-            </label>
-            <select
-              id="quarter-pick"
-              value={`${picked.year}-${picked.quarter}`}
-              onChange={(e) => {
-                const [y, q] = e.target.value.split("-").map(Number);
-                setPicked({ year: y, quarter: q as 1 | 2 | 3 | 4 });
-              }}
-              className="rounded-sm border-[1.5px] border-ink bg-white px-3 py-2.5 text-sm font-semibold text-ink shadow-card transition-colors duration-150 focus:border-orange focus:outline-none focus:ring-[3px] focus:ring-orange/15"
-            >
-              {quarterOptions.map((q) => (
-                <option key={`${q.year}-${q.quarter}`} value={`${q.year}-${q.quarter}`}>
-                  {quarterLabel(q)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-3.5 py-2.5 font-dm text-[13px] font-semibold text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f]"
-          >
-            <span className="text-sm leading-none">🖨</span> Print Report
-          </button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="hidden print:block print:mb-2">
         <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-black">
