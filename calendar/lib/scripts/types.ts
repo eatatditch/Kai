@@ -79,6 +79,7 @@ export type ReferenceScript = {
 export type GeneratedScript = {
   id: string;
   profile_id: string | null;
+  event_id: string | null;
   brand: ScriptBrand | null;
   topic: string | null;
   length: ScriptLength | null;

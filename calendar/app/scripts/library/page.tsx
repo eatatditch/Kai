@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { ScriptsLibrary } from "@/components/scripts/ScriptsLibrary";
 import { createClient } from "@/lib/supabase/server";
@@ -19,6 +20,14 @@ export default async function LibraryPage() {
   }
 
   return (
-    <ScriptsLibrary userEmail={user.email!} isAdmin={isAdmin(user.email)} />
+    <Suspense
+      fallback={
+        <div className="mx-auto max-w-[1100px] px-5 pt-6 pb-15 text-[14px] text-muted">
+          Loading…
+        </div>
+      }
+    >
+      <ScriptsLibrary userEmail={user.email!} isAdmin={isAdmin(user.email)} />
+    </Suspense>
   );
 }

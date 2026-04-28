@@ -12,17 +12,19 @@ const CAT_CLASSES: Record<Category, string> = {
 
 type Props = {
   event: CalendarEvent;
+  hasScript?: boolean;
   onClick?: (event: CalendarEvent) => void;
 };
 
-export function EventPill({ event, onClick }: Props) {
+export function EventPill({ event, hasScript = false, onClick }: Props) {
   const type = getType(event.type);
   const title = event.title || type.label;
+  const hint = `${type.label}: ${event.title}${hasScript ? " · script attached" : ""}`;
 
   return (
     <button
       type="button"
-      title={`${type.label}: ${event.title}`}
+      title={hint}
       onClick={(e) => {
         e.stopPropagation();
         onClick?.(event);
@@ -31,6 +33,14 @@ export function EventPill({ event, onClick }: Props) {
     >
       <span className="text-[11px] leading-none">{type.emoji}</span>
       <span className="overflow-hidden text-ellipsis">{title}</span>
+      {hasScript && (
+        <span
+          className="ml-auto shrink-0 text-[9px] leading-none print:hidden"
+          aria-label="Has attached script"
+        >
+          📝
+        </span>
+      )}
     </button>
   );
 }

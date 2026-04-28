@@ -14,6 +14,8 @@ import {
   mergeEvents,
   replaceAllEvents,
 } from "@/lib/events-api";
+import { fetchEventIdsWithScripts } from "@/lib/scripts/api";
+import { createClient } from "@/lib/supabase/client";
 import { AppShell } from "./AppShell";
 import { CalendarToolbar } from "./Header";
 import { FilterBar } from "./FilterBar";
@@ -99,6 +101,9 @@ export function Calendar({ userEmail, isAdmin }: Props) {
     () => new Set<FilterKey>(["all"]),
   );
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [scriptedEventIds, setScriptedEventIds] = useState<Set<string>>(
+    () => new Set<string>(),
+  );
   const [modal, setModal] = useState<ModalState>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -145,6 +150,40 @@ export function Calendar({ userEmail, isAdmin }: Props) {
       }
     });
     return unsubscribe;
+  }, []);
+
+  // Track which events have at least one attached script so the calendar
+  // pills can show a 📝 marker. Refetch on any change to generated_scripts.
+  useEffect(() => {
+    let active = true;
+    fetchEventIdsWithScripts()
+      .then((set) => {
+        if (active) setScriptedEventIds(set);
+      })
+      .catch(() => {
+        // soft-fail: badges just don't show
+      });
+
+    const supabase = createClient();
+    const channel = supabase
+      .channel("generated-scripts-watch")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "generated_scripts" },
+        () => {
+          fetchEventIdsWithScripts()
+            .then((set) => {
+              if (active) setScriptedEventIds(set);
+            })
+            .catch(() => {});
+        },
+      )
+      .subscribe();
+
+    return () => {
+      active = false;
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   useEffect(() => {
@@ -440,6 +479,7 @@ export function Calendar({ userEmail, isAdmin }: Props) {
             <MonthView
               cursor={cursor}
               events={visibleEvents}
+              scriptedEventIds={scriptedEventIds}
               onDayClick={onDayClick}
               onEventClick={onEventClick}
             />
@@ -447,6 +487,7 @@ export function Calendar({ userEmail, isAdmin }: Props) {
             <WeekView
               cursor={cursor}
               events={visibleEvents}
+              scriptedEventIds={scriptedEventIds}
               onDayClick={onDayClick}
               onEventClick={onEventClick}
             />

@@ -96,14 +96,18 @@ function fromParsed(p: ParsedVariant): ScriptVariant {
 export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
   const search = useSearchParams();
   const initialProfileId = search?.get("profile") ?? "";
+  const initialEventId = search?.get("eventId") ?? "";
+  const initialTopic = search?.get("topic") ?? "";
+  const initialFacts = search?.get("facts") ?? "";
   const [profiles, setProfiles] = useState<VoiceProfileSummary[]>([]);
   const [profileId, setProfileId] = useState<string>(initialProfileId);
+  const [eventId] = useState<string>(initialEventId);
   const [brand, setBrand] = useState<ScriptBrand>("Ditch");
   const [brandOther, setBrandOther] = useState("");
-  const [topic, setTopic] = useState("");
+  const [topic, setTopic] = useState(initialTopic);
   const [length, setLength] = useState<ScriptLength>(":30");
   const [platform, setPlatform] = useState<ScriptPlatform>("IG Reel / TikTok");
-  const [facts, setFacts] = useState("");
+  const [facts, setFacts] = useState(initialFacts);
   const [cta, setCta] = useState("");
   const [reference, setReference] = useState<string>("");
   const [spice, setSpice] = useState<1 | 2 | 3 | 4 | 5>(3);
@@ -354,13 +358,14 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
     try {
       await saveGeneratedScript({
         profile_id: brief.profile_id,
+        event_id: eventId || null,
         brand: brief.brand,
         topic: brief.topic,
         length: brief.length,
         brief_json: brief,
         variants_json: variants,
       });
-      showToast("Saved to library");
+      showToast(eventId ? "Saved to library + event" : "Saved to library");
     } catch {
       showToast("Save failed");
     }
@@ -405,6 +410,17 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
           <h2 className="mb-4 font-bebas text-[20px] tracking-[0.1em] text-navy">
             BRIEF
           </h2>
+
+          {eventId && (
+            <div className="mb-4 rounded-sm border border-navy bg-navy-tint px-3 py-2 text-[12px] text-ink">
+              <div className="font-semibold text-navy">
+                Linked to a calendar event
+              </div>
+              <div className="text-muted">
+                Saving these variants will attach them to that event.
+              </div>
+            </div>
+          )}
 
           <div className="mb-3.5">
             <label htmlFor="profile" className={labelCls}>

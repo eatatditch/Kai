@@ -1,14 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarEvent, Recurrence } from "@/types";
-import { EVENT_TYPES, getType } from "@/lib/event-types";
+import {
+  EVENT_TYPES,
+  getType,
+  isScriptableEventType,
+} from "@/lib/event-types";
 import { MIN_DATE, MAX_DATE } from "@/lib/constants";
 import { ymd, parseYmd, formatTime } from "@/lib/date-utils";
 import {
   RECURRENCE_OPTIONS,
   generateOccurrenceDates,
 } from "@/lib/recurrence";
+import { fetchGeneratedScriptsForEvent } from "@/lib/scripts/api";
+import type { GeneratedScript } from "@/lib/scripts/types";
 
 type Props = {
   date: string;
@@ -74,6 +81,56 @@ export function EventModal({
   });
 
   const isEdit = initialEvent !== null;
+  const showScriptPanel = isEdit && initialEvent
+    ? isScriptableEventType(initialEvent.type)
+    : false;
+
+  const [attachedScripts, setAttachedScripts] = useState<GeneratedScript[]>([]);
+  const [loadingScripts, setLoadingScripts] = useState(false);
+
+  useEffect(() => {
+    if (!showScriptPanel || !initialEvent) {
+      setAttachedScripts([]);
+      return;
+    }
+    let active = true;
+    setLoadingScripts(true);
+    fetchGeneratedScriptsForEvent(initialEvent.id)
+      .then((rows) => {
+        if (active) setAttachedScripts(rows);
+      })
+      .catch(() => {
+        if (active) setAttachedScripts([]);
+      })
+      .finally(() => {
+        if (active) setLoadingScripts(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [showScriptPanel, initialEvent]);
+
+  const generateScriptHref = useMemo(() => {
+    if (!isEdit || !initialEvent) return null;
+    const params = new URLSearchParams();
+    params.set("eventId", initialEvent.id);
+    if (initialEvent.title) params.set("topic", initialEvent.title);
+    const factsBits: string[] = [];
+    const niceDate = parseYmd(initialEvent.date).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    factsBits.push(`Date: ${niceDate}`);
+    if (initialEvent.time) {
+      factsBits.push(`Time: ${formatTime(initialEvent.time)}`);
+    }
+    if (initialEvent.notes) factsBits.push(initialEvent.notes);
+    params.set("facts", factsBits.join("\n"));
+    params.set("prefill", "1");
+    return `/scripts?${params.toString()}`;
+  }, [isEdit, initialEvent]);
 
   const occurrenceCount = useMemo(() => {
     if (isEdit || recurrence === "none") return 1;
@@ -312,6 +369,49 @@ export function EventModal({
                 className="min-h-[60px] w-full resize-y rounded-sm border-[1.5px] border-line bg-white px-3 py-2.5 text-sm text-ink transition-colors duration-150 focus:border-orange focus:outline-none focus:ring-[3px] focus:ring-orange/15"
               />
             </div>
+
+            {showScriptPanel && initialEvent && generateScriptHref && (
+              <div className="mb-4 rounded-sm border border-line bg-cream p-3">
+                <div className="mb-2 flex items-baseline justify-between">
+                  <h5 className="m-0 font-bebas text-[14px] tracking-[0.1em] text-navy">
+                    SCRIPTS
+                  </h5>
+                  <Link
+                    href={generateScriptHref}
+                    className="rounded-sm border border-orange bg-orange px-2 py-1 text-[11px] font-semibold text-white transition-colors duration-150 hover:bg-[#b8541f]"
+                  >
+                    + Generate script
+                  </Link>
+                </div>
+                {loadingScripts ? (
+                  <p className="m-0 text-[12px] text-muted">Loading…</p>
+                ) : attachedScripts.length === 0 ? (
+                  <p className="m-0 text-[12px] text-muted">
+                    No scripts attached yet. Generate one to draft VO copy
+                    for this {getType(initialEvent.type).label.toLowerCase()}.
+                  </p>
+                ) : (
+                  <ul className="m-0 flex flex-col gap-1.5">
+                    {attachedScripts.map((s) => (
+                      <li key={s.id}>
+                        <Link
+                          href={`/scripts/library?open=${s.id}`}
+                          className="flex items-center justify-between gap-3 rounded-sm border border-line bg-white px-2.5 py-1.5 text-[12px] text-ink transition-colors duration-150 hover:border-ink hover:bg-sand"
+                        >
+                          <span className="truncate">
+                            {s.topic || "Untitled brief"}
+                          </span>
+                          <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.06em] text-muted">
+                            {s.variants_json.length} variant
+                            {s.variants_json.length === 1 ? "" : "s"}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-end gap-2 pt-1.5">
               {isEdit && (

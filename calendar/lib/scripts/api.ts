@@ -30,6 +30,7 @@ type DbReferenceScript = {
 type DbGeneratedScript = {
   id: string;
   profile_id: string | null;
+  event_id: string | null;
   brand: string | null;
   topic: string | null;
   length: string | null;
@@ -37,6 +38,9 @@ type DbGeneratedScript = {
   variants_json: ScriptVariant[];
   created_at: string;
 };
+
+const GENERATED_SCRIPT_COLUMNS =
+  "id, profile_id, event_id, brand, topic, length, brief_json, variants_json, created_at";
 
 function fromVoiceProfileRow(row: DbVoiceProfile): VoiceProfile {
   return {
@@ -64,6 +68,7 @@ function fromGeneratedRow(row: DbGeneratedScript): GeneratedScript {
   return {
     id: row.id,
     profile_id: row.profile_id,
+    event_id: row.event_id ?? null,
     brand: (row.brand as GeneratedScript["brand"]) ?? null,
     topic: row.topic,
     length: (row.length as GeneratedScript["length"]) ?? null,
@@ -186,16 +191,43 @@ export async function fetchGeneratedScripts(): Promise<GeneratedScript[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("generated_scripts")
-    .select(
-      "id, profile_id, brand, topic, length, brief_json, variants_json, created_at",
-    )
+    .select(GENERATED_SCRIPT_COLUMNS)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((r) => fromGeneratedRow(r as DbGeneratedScript));
 }
 
+export async function fetchGeneratedScriptsForEvent(
+  eventId: string,
+): Promise<GeneratedScript[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("generated_scripts")
+    .select(GENERATED_SCRIPT_COLUMNS)
+    .eq("event_id", eventId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((r) => fromGeneratedRow(r as DbGeneratedScript));
+}
+
+export async function fetchEventIdsWithScripts(): Promise<Set<string>> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("generated_scripts")
+    .select("event_id")
+    .not("event_id", "is", null);
+  if (error) throw error;
+  const set = new Set<string>();
+  for (const row of data ?? []) {
+    const id = (row as { event_id: string | null }).event_id;
+    if (id) set.add(id);
+  }
+  return set;
+}
+
 export async function saveGeneratedScript(input: {
   profile_id: string | null;
+  event_id?: string | null;
   brand: string | null;
   topic: string;
   length: string;
@@ -203,15 +235,34 @@ export async function saveGeneratedScript(input: {
   variants_json: ScriptVariant[];
 }): Promise<GeneratedScript> {
   const supabase = createClient();
+  const payload = {
+    profile_id: input.profile_id,
+    event_id: input.event_id ?? null,
+    brand: input.brand,
+    topic: input.topic,
+    length: input.length,
+    brief_json: input.brief_json,
+    variants_json: input.variants_json,
+  };
   const { data, error } = await supabase
     .from("generated_scripts")
-    .insert(input)
-    .select(
-      "id, profile_id, brand, topic, length, brief_json, variants_json, created_at",
-    )
+    .insert(payload)
+    .select(GENERATED_SCRIPT_COLUMNS)
     .single();
   if (error) throw error;
   return fromGeneratedRow(data as DbGeneratedScript);
+}
+
+export async function setGeneratedScriptEvent(
+  id: string,
+  eventId: string | null,
+): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("generated_scripts")
+    .update({ event_id: eventId })
+    .eq("id", id);
+  if (error) throw error;
 }
 
 export async function deleteGeneratedScript(id: string): Promise<void> {

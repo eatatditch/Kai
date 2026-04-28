@@ -49,3 +49,20 @@ const FALLBACK = EVENT_TYPES[EVENT_TYPES.length - 1];
 export function getType(id: string): EventType {
   return EVENT_TYPES.find((t) => t.id === id) ?? FALLBACK;
 }
+
+// Event types eligible for AI script generation. Anything in `comms` plus
+// IG Reels and YouTube. Matches the user's V2 scope.
+const SCRIPTABLE_TYPE_IDS = new Set<string>([
+  "ig_reel",
+  "yt_post",
+  "email",
+  "sms",
+  "push",
+  "blog",
+  "promo",
+  "ad_campaign",
+]);
+
+export function isScriptableEventType(typeId: string): boolean {
+  return SCRIPTABLE_TYPE_IDS.has(typeId);
+}
