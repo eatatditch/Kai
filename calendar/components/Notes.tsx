@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Note, NoteCategory, NoteFilterKey } from "@/types";
 import { NOTE_CATEGORIES, getNoteCategory } from "@/lib/note-categories";
@@ -10,6 +9,7 @@ import {
   deleteNoteById,
   subscribeNotes,
 } from "@/lib/notes-api";
+import { AppShell } from "./AppShell";
 import { NoteModal } from "./NoteModal";
 import { Toast } from "./Toast";
 
@@ -127,64 +127,24 @@ export function Notes({ userEmail, isAdmin }: Props) {
 
   return (
     <div className="mx-auto max-w-[1100px] px-5 pt-6 pb-15">
-      <div className="mb-2 flex justify-end gap-3 text-[12px] text-muted">
-        <span>{userEmail}</span>
-        {isAdmin && (
-          <>
-            <span aria-hidden="true">·</span>
-            <Link
-              href="/admin"
-              className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
-            >
-              Manage users
-            </Link>
-          </>
-        )}
-        <span aria-hidden="true">·</span>
-        <Link
-          href="/"
-          className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
-        >
-          Calendar
-        </Link>
-        <span aria-hidden="true">·</span>
-        <Link
-          href="/reports"
-          className="font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
-        >
-          Reports
-        </Link>
-        <span aria-hidden="true">·</span>
-        <form action="/auth/signout" method="post" className="inline">
+      <AppShell
+        userEmail={userEmail}
+        isAdmin={isAdmin}
+        current="notes"
+        homeHref="/notes"
+        title="Notes & Ideas"
+        subtitle="Shoot ideas, event ideas, meeting notes"
+        printHidden
+        actions={
           <button
-            type="submit"
-            className="cursor-pointer font-medium text-muted underline-offset-2 hover:text-orange hover:underline"
+            type="button"
+            onClick={() => setModal({ editId: null })}
+            className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-3.5 py-2.5 font-dm text-[13px] font-semibold text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f]"
           >
-            Sign out
+            <span className="text-sm leading-none">＋</span> New Note
           </button>
-        </form>
-      </div>
-
-      <header className="mb-[22px] flex flex-wrap items-end justify-between gap-4 border-b-2 border-ink pb-5">
-        <div className="flex flex-col">
-          <span className="mb-1 text-[11px] font-bold uppercase tracking-[0.22em] text-orange">
-            Ditch Hospitality Group
-          </span>
-          <h1 className="m-0 font-bebas text-[clamp(40px,5vw,60px)] leading-[0.95] tracking-[0.01em] text-navy">
-            Notes &amp; Ideas
-          </h1>
-          <span className="mt-1.5 text-[13px] font-medium text-muted">
-            Shoot ideas, event ideas, meeting notes
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => setModal({ editId: null })}
-          className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-3.5 py-2.5 font-dm text-[13px] font-semibold text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f]"
-        >
-          <span className="text-sm leading-none">＋</span> New Note
-        </button>
-      </header>
+        }
+      />
 
       <div className="mb-[18px] flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-line bg-white px-3.5 py-3">
         <span className="mr-1 text-[11px] font-bold uppercase tracking-[0.15em] text-muted">

@@ -14,7 +14,8 @@ import {
   mergeEvents,
   replaceAllEvents,
 } from "@/lib/events-api";
-import { Header } from "./Header";
+import { AppShell } from "./AppShell";
+import { CalendarToolbar } from "./Header";
 import { FilterBar } from "./FilterBar";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
@@ -404,20 +405,27 @@ export function Calendar({ userEmail, isAdmin }: Props) {
 
   return (
     <div className="page-calendar mx-auto max-w-[1400px] px-5 pt-6 pb-15 print:max-w-none print:px-0 print:pt-0 print:pb-0">
-      <Header
-        view={view}
-        prevDisabled={navDisabled.prev}
-        nextDisabled={navDisabled.next}
+      <AppShell
         userEmail={userEmail}
         isAdmin={isAdmin}
-        onViewChange={setView}
-        onPrev={() => navigate(-1)}
-        onToday={goToday}
-        onNext={() => navigate(1)}
-        onPrint={() => window.print()}
-        onExport={onExport}
-        onImport={onImport}
-        onNewEvent={onNewEvent}
+        current="calendar"
+        title="Content Calendar"
+        subtitle="April 2026 onward · Brand & Marketing"
+        actions={
+          <CalendarToolbar
+            view={view}
+            prevDisabled={navDisabled.prev}
+            nextDisabled={navDisabled.next}
+            onViewChange={setView}
+            onPrev={() => navigate(-1)}
+            onToday={goToday}
+            onNext={() => navigate(1)}
+            onPrint={() => window.print()}
+            onExport={onExport}
+            onImport={onImport}
+            onNewEvent={onNewEvent}
+          />
+        }
       />
 
       <FilterBar active={filters} onToggle={toggleFilter} />
