@@ -22,6 +22,10 @@ import {
   saveGeneratedScript,
 } from "@/lib/scripts/api";
 import { estimateRuntimeSeconds, variantToCopyText } from "@/lib/scripts/format";
+import {
+  makeStreamParser,
+  type ParsedVariant,
+} from "@/lib/scripts/streamParser";
 import { VariantCard } from "./VariantCard";
 
 const LOADING_MESSAGES = [
@@ -79,6 +83,16 @@ function ChipGroup<T extends string>({
   );
 }
 
+function fromParsed(p: ParsedVariant): ScriptVariant {
+  return {
+    name: p.name,
+    angle: p.angle,
+    script: p.script,
+    runtime_estimate_seconds:
+      p.runtime_estimate_seconds || estimateRuntimeSeconds(p.script),
+  };
+}
+
 export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
   const search = useSearchParams();
   const initialProfileId = search?.get("profile") ?? "";
@@ -95,9 +109,14 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
   const [spice, setSpice] = useState<1 | 2 | 3 | 4 | 5>(3);
   const [lockin, setLockin] = useState("");
 
-  const [variants, setVariants] = useState<ScriptVariant[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [regenIndex, setRegenIndex] = useState<number | null>(null);
+  const [variants, setVariants] = useState<ScriptVariant[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState<Set<number>>(new Set());
+  const [slotsStreaming, setSlotsStreaming] = useState<
+    Map<number, ScriptVariant>
+  >(new Map());
+  const [streamingMode, setStreamingMode] = useState<
+    "all" | "single" | "lock" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -173,27 +192,68 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
     ],
   );
 
-  const callGenerate = async (
-    body: ScriptBrief,
+  const consumeStream = async (
+    res: Response,
+    onSnap: (
+      finished: ScriptVariant[],
+      inProgress: ScriptVariant | null,
+    ) => void,
   ): Promise<ScriptVariant[]> => {
-    const res = await fetch("/api/scripts/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(text || `Request failed (${res.status})`);
+    if (!res.body) throw new Error("No response body");
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    const parser = makeStreamParser();
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value, { stream: true });
+      const snap = parser.feed(chunk);
+      onSnap(
+        snap.variants.map(fromParsed),
+        snap.inProgress ? fromParsed(snap.inProgress) : null,
+      );
     }
-    const data = (await res.json()) as { variants: ScriptVariant[] };
-    if (!data.variants || !Array.isArray(data.variants)) {
-      throw new Error("Bad response from generator.");
+    return parser.end().map(fromParsed);
+  };
+
+  const startBatchStream = async (
+    body: ScriptBrief,
+    mode: "all" | "lock",
+  ) => {
+    setStreamingMode(mode);
+    setVariants([]);
+    setSlotsLoading(new Set([0, 1, 2]));
+    setSlotsStreaming(new Map());
+    setError(null);
+
+    try {
+      const res = await fetch("/api/scripts/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Request failed (${res.status})`);
+      }
+
+      const final = await consumeStream(res, (finished, inProgress) => {
+        setVariants(finished);
+        setSlotsStreaming(
+          inProgress ? new Map([[finished.length, inProgress]]) : new Map(),
+        );
+      });
+
+      setVariants(final.slice(0, 3));
+      setSlotsStreaming(new Map());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Generation failed");
+      showToast("Generation failed");
+    } finally {
+      setSlotsLoading(new Set());
+      setStreamingMode(null);
     }
-    return data.variants.map((v) => ({
-      ...v,
-      runtime_estimate_seconds:
-        v.runtime_estimate_seconds || estimateRuntimeSeconds(v.script),
-    }));
   };
 
   const onGenerate = async () => {
@@ -201,58 +261,87 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
       showToast("Fill in topic, key facts, and CTA first.");
       return;
     }
-    setLoading(true);
-    setError(null);
-    setRegenIndex(null);
-    try {
-      const generated = await callGenerate(buildBrief());
-      setVariants(generated);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Generation failed");
-      showToast("Generation failed");
-    } finally {
-      setLoading(false);
-    }
+    await startBatchStream(buildBrief(), "all");
   };
 
   const onRegenerate = async (idx: number) => {
-    if (!variants) return;
-    setRegenIndex(idx);
+    if (!variants[idx]) return;
+    setStreamingMode("single");
+    setSlotsLoading((prev) => new Set(prev).add(idx));
     setError(null);
+
     try {
       const avoid = variants
         .filter((_, i) => i !== idx)
         .map((v) => `${v.name}: ${v.angle}`);
-      const next = await callGenerate(
-        buildBrief({ regenerate_index: idx, avoid_angles: avoid }),
-      );
-      const replacement = next[0];
+      const res = await fetch("/api/scripts/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          buildBrief({ regenerate_index: idx, avoid_angles: avoid }),
+        ),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Request failed (${res.status})`);
+      }
+
+      const final = await consumeStream(res, (finished, inProgress) => {
+        const live = finished[0] ?? inProgress;
+        if (live) {
+          setSlotsStreaming(new Map([[idx, live]]));
+        }
+      });
+
+      const replacement = final[0];
       if (!replacement) {
         showToast("No replacement variant returned");
         return;
       }
       setVariants((prev) =>
-        prev ? prev.map((v, i) => (i === idx ? replacement : v)) : prev,
+        prev.map((v, i) => (i === idx ? replacement : v)),
       );
+      setSlotsStreaming(new Map());
       showToast("Variant regenerated");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Regenerate failed");
       showToast("Regenerate failed");
     } finally {
-      setRegenIndex(null);
+      setSlotsLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(idx);
+        return next;
+      });
+      if (streamingMode === "single") setStreamingMode(null);
     }
+  };
+
+  const onLockAngle = async (idx: number) => {
+    const target = variants[idx];
+    if (!target) return;
+    if (!target.name.trim() || !target.angle.trim()) {
+      showToast("This variant doesn't have a name + angle yet.");
+      return;
+    }
+    await startBatchStream(
+      buildBrief({
+        lock_angle: { name: target.name, angle: target.angle },
+      }),
+      "lock",
+    );
   };
 
   const onUpdateVariant = (idx: number, patch: Partial<ScriptVariant>) => {
     setVariants((prev) =>
-      prev ? prev.map((v, i) => (i === idx ? { ...v, ...patch } : v)) : prev,
+      prev.map((v, i) => (i === idx ? { ...v, ...patch } : v)),
     );
   };
 
   const onCopy = async (idx: number) => {
-    if (!variants) return;
+    const v = variants[idx];
+    if (!v) return;
     try {
-      await navigator.clipboard.writeText(variantToCopyText(variants[idx]));
+      await navigator.clipboard.writeText(variantToCopyText(v));
       showToast("Copied clean text");
     } catch {
       showToast("Copy failed");
@@ -260,7 +349,7 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
   };
 
   const onSaveAll = async () => {
-    if (!variants) return;
+    if (variants.length === 0) return;
     const brief = buildBrief();
     try {
       await saveGeneratedScript({
@@ -276,6 +365,9 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
       showToast("Save failed");
     }
   };
+
+  const showCards =
+    variants.length > 0 || slotsLoading.size > 0 || slotsStreaming.size > 0;
 
   return (
     <div className="mx-auto max-w-[1400px] px-5 pt-6 pb-15">
@@ -492,10 +584,14 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
           <button
             type="button"
             onClick={onGenerate}
-            disabled={loading}
+            disabled={streamingMode !== null}
             className="inline-flex w-full items-center justify-center gap-1.5 rounded-[10px] border-[1.5px] border-orange bg-orange px-4 py-3 font-bebas text-[18px] uppercase tracking-[0.12em] text-white shadow-card transition-colors duration-150 hover:border-[#b8541f] hover:bg-[#b8541f] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {loading ? "Generating…" : "Generate Three Variants"}
+            {streamingMode === "all"
+              ? "Generating…"
+              : streamingMode === "lock"
+                ? "Locking angle…"
+                : "Generate Three Variants"}
           </button>
           {error && (
             <p className="mt-2 text-[12px] text-[var(--cat-event)]">{error}</p>
@@ -503,7 +599,7 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
         </section>
 
         <section aria-label="Variants" className="flex flex-col gap-4">
-          {!variants && !loading && (
+          {!showCards && (
             <div className="rounded-[10px] border-[1.5px] border-dashed border-line bg-white px-6 py-12 text-center">
               <p className="m-0 font-bebas text-[20px] tracking-[0.08em] text-muted">
                 THREE VARIANTS WILL APPEAR HERE
@@ -518,54 +614,82 @@ export function ScriptsGenerator({ userEmail, isAdmin }: Props) {
             </div>
           )}
 
-          {loading && (
-            <div className="flex flex-col gap-3">
-              <ul className="rounded-[10px] border-[1.5px] border-line bg-white px-5 py-4 text-[13px] text-muted shadow-card">
-                {LOADING_MESSAGES.map((m) => (
-                  <li
-                    key={m}
-                    className="border-b border-dashed border-line py-1 last:border-b-0"
-                  >
-                    {m}
-                  </li>
-                ))}
-              </ul>
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className="animate-pulse rounded-[10px] border-[1.5px] border-line bg-white p-5 shadow-card"
-                >
-                  <div className="mb-3 h-5 w-32 rounded bg-sand" />
-                  <div className="mb-2 h-3 w-full rounded bg-line-soft" />
-                  <div className="mb-4 h-3 w-3/4 rounded bg-line-soft" />
-                  <div className="h-32 rounded bg-cream" />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {variants && !loading && (
+          {showCards && (
             <>
-              {variants.map((v, idx) => (
-                <VariantCard
-                  key={idx}
-                  variant={v}
-                  index={idx}
-                  regenerating={regenIndex === idx}
-                  onCopy={() => onCopy(idx)}
-                  onRegenerate={() => onRegenerate(idx)}
-                  onUpdate={(patch) => onUpdateVariant(idx, patch)}
-                />
-              ))}
-              <div className="flex justify-end">
-                <button
-                  type="button"
-                  onClick={onSaveAll}
-                  className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-ink bg-white px-3.5 py-2.5 font-dm text-[13px] font-semibold text-ink shadow-card transition-colors duration-150 hover:bg-sand"
-                >
-                  Save all to library
-                </button>
-              </div>
+              {streamingMode === "all" || streamingMode === "lock" ? (
+                <ul className="rounded-[10px] border-[1.5px] border-line bg-white px-5 py-3 text-[12.5px] text-muted shadow-card">
+                  {LOADING_MESSAGES.map((m) => (
+                    <li
+                      key={m}
+                      className="border-b border-dashed border-line py-1 last:border-b-0"
+                    >
+                      {m}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {[0, 1, 2].map((idx) => {
+                const streaming = slotsStreaming.get(idx);
+                const finished = variants[idx];
+                const isLoading = slotsLoading.has(idx);
+
+                if (streaming) {
+                  return (
+                    <VariantCard
+                      key={`streaming-${idx}`}
+                      variant={streaming}
+                      index={idx}
+                      regenerating={streamingMode === "single"}
+                      streaming
+                      onCopy={() => onCopy(idx)}
+                      onRegenerate={() => onRegenerate(idx)}
+                      onUpdate={(patch) => onUpdateVariant(idx, patch)}
+                      onLockAngle={() => onLockAngle(idx)}
+                    />
+                  );
+                }
+                if (finished) {
+                  return (
+                    <VariantCard
+                      key={`v-${idx}`}
+                      variant={finished}
+                      index={idx}
+                      regenerating={false}
+                      onCopy={() => onCopy(idx)}
+                      onRegenerate={() => onRegenerate(idx)}
+                      onUpdate={(patch) => onUpdateVariant(idx, patch)}
+                      onLockAngle={() => onLockAngle(idx)}
+                    />
+                  );
+                }
+                if (isLoading) {
+                  return (
+                    <div
+                      key={`skeleton-${idx}`}
+                      className="animate-pulse rounded-[10px] border-[1.5px] border-line bg-white p-5 shadow-card"
+                    >
+                      <div className="mb-3 h-5 w-32 rounded bg-sand" />
+                      <div className="mb-2 h-3 w-full rounded bg-line-soft" />
+                      <div className="mb-4 h-3 w-3/4 rounded bg-line-soft" />
+                      <div className="h-32 rounded bg-cream" />
+                    </div>
+                  );
+                }
+                return null;
+              })}
+
+              {variants.length === 3 && streamingMode === null && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={onSaveAll}
+                    className="inline-flex items-center gap-1.5 rounded-[10px] border-[1.5px] border-ink bg-white px-3.5 py-2.5 font-dm text-[13px] font-semibold text-ink shadow-card transition-colors duration-150 hover:bg-sand"
+                  >
+                    Save all to library
+                  </button>
+                </div>
+              )}
             </>
           )}
         </section>

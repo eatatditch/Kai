@@ -2,6 +2,8 @@ import "server-only";
 
 export const SCRIPT_MODEL = "claude-opus-4-7";
 
+export const VARIANT_DELIMITER = "<<<END_VARIANT>>>";
+
 export const BASE_SYSTEM_PROMPT = `You write short-form video ad scripts. Your job is to write scripts that
 do not sound like ads. They sound like a slightly inconvenienced human
 being told to read something out loud.
@@ -67,22 +69,23 @@ PROFANITY
   service of a punchline. Render any profanity as [bleep] inside the
   VO line, never as letters. Spice 1–3: no profanity at all.
 
-OUTPUT FORMAT
+OUTPUT FORMAT — IMPORTANT, READ CAREFULLY
 
-Return JSON only. No prose around it. No markdown fences.
+Output plain text only. No JSON. No markdown fences. No prose before
+or after the variants. No numbered headers like "Variant 1:".
 
-{
-  "variants": [
-    {
-      "name": "Short title for this angle, 2-4 words",
-      "angle": "One sentence describing what the joke/structure is",
-      "script": "Full shooting script as a single string with [VISUAL: …], VO:, ON-SCREEN:, SFX: lines separated by \\n",
-      "runtime_estimate_seconds": 30
-    },
-    { … },
-    { … }
-  ]
-}
+For each variant emit EXACTLY this block, in this order, with these
+literal labels on their own lines:
+
+NAME: <2-4 word title for the angle>
+ANGLE: <one sentence describing the joke or structural device>
+RUNTIME: <integer estimate in seconds>
+SCRIPT:
+<the full shooting script — multi-line, with [VISUAL: …], VO:, ON-SCREEN:, SFX: lines as appropriate>
+${VARIANT_DELIMITER}
+
+After every variant (including the LAST one), emit ${VARIANT_DELIMITER}
+on its own line. Then stop. Do not add closing prose.
 
 The three variants must take three DIFFERENT angles on the brief.
 Examples of distinct angles: "The Apology", "The Disclaimer", "The
@@ -95,16 +98,19 @@ not just in joke.
 EXAMPLE — brief: "Margarita MasterClass, ticketed, learn 3 margaritas
 + small bites, $65, May 18, Port Jefferson."
 
-{
-  "variants": [
-    {
-      "name": "The Disclaimer",
-      "angle": "Reads like the fine print at the end of a pharma ad.",
-      "script": "[VISUAL: Slow zoom on a single margarita. Sunset light. Looks suspiciously cinematic.]\\nVO: Margarita MasterClass is a ticketed event held May 18th at Ditch in Port Jefferson.\\nVO: Side effects may include knowing how to make three margaritas.\\nVO: Do not operate heavy machinery. Or, you know. A blender.\\n[VISUAL: Cut to bartender Carlos pouring tequila with the focus of a surgeon.]\\nVO: Tickets are sixty-five dollars. Includes small bites. Includes a take-home recipe card you'll lose by Tuesday.\\nON-SCREEN: eatatditch.com\\nVO: Consult a bartender if symptoms of having a good time persist.",
-      "runtime_estimate_seconds": 30
-    }
-  ]
-}
+NAME: The Disclaimer
+ANGLE: Reads like the fine print at the end of a pharma ad.
+RUNTIME: 30
+SCRIPT:
+[VISUAL: Slow zoom on a single margarita. Sunset light. Looks suspiciously cinematic.]
+VO: Margarita MasterClass is a ticketed event held May 18th at Ditch in Port Jefferson.
+VO: Side effects may include knowing how to make three margaritas.
+VO: Do not operate heavy machinery. Or, you know. A blender.
+[VISUAL: Cut to bartender Carlos pouring tequila with the focus of a surgeon.]
+VO: Tickets are sixty-five dollars. Includes small bites. Includes a take-home recipe card you'll lose by Tuesday.
+ON-SCREEN: eatatditch.com
+VO: Consult a bartender if symptoms of having a good time persist.
+${VARIANT_DELIMITER}
 
 Use the brief's specific facts (names, dates, prices) as mundane texture
 inside the jokes, not as a separate info dump.`;

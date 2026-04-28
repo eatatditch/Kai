@@ -29,6 +29,7 @@ export type ScriptBrief = {
   lockin?: string;
   regenerate_index?: number;
   avoid_angles?: string[];
+  lock_angle?: { name: string; angle: string };
 };
 
 export type ScriptVariant = {
