@@ -1,0 +1,1133 @@
+use this as reference for design schema and all:
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Swell Brands — a house of brands, raised by the tide.</title>
+<meta name="description" content="Swell Brands is the parent company of Ditch, Swell Surf Co., and what's coming next. Hospitality and lifestyle brands built on Long Island." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Caveat:wght@500;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --sand:        #f3e9d2;
+  --sand-2:      #ebdfc1;
+  --paper:       #f8f1de;
+  --ink:         #1a3741;
+  --tide:        #1d4e58;
+  --tide-2:      #2d6b78;
+  --sky:         #6cabb6;
+  --sun:         #ee7a3a;
+  --sun-2:       #f29a5b;
+  --lime:        #d6dd6e;
+  --hibiscus:    #c83e3e;
+
+  --display: "Bagel Fat One", "Impact", sans-serif;
+  --script:  "Caveat", cursive;
+  --body:    "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --gut: clamp(20px, 4vw, 64px);
+}
+
+*{ box-sizing:border-box; }
+html,body{ margin:0; padding:0; }
+html{ scroll-behavior:smooth; }
+body{
+  background: var(--sand);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+a{ color:inherit; text-decoration:none; }
+::selection{ background: var(--sun); color: var(--paper); }
+
+.wood{
+  position: relative;
+  background:
+    repeating-linear-gradient(90deg,
+      rgba(110,68,32,0) 0px, rgba(110,68,32,.06) 2px, rgba(110,68,32,0) 4px,
+      rgba(110,68,32,.10) 12px, rgba(110,68,32,0) 22px,
+      rgba(110,68,32,.06) 33px, rgba(110,68,32,0) 50px),
+    repeating-linear-gradient(90deg,
+      rgba(50,28,10,0) 0px, rgba(50,28,10,.04) 60px,
+      rgba(50,28,10,.10) 90px, rgba(50,28,10,0) 130px),
+    linear-gradient(180deg, #c79a6f 0%, #b78657 50%, #a87648 100%);
+  color: var(--paper);
+}
+.wood::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.012 0.9' numOctaves='2' seed='3'/><feColorMatrix values='0 0 0 0 0.25  0 0 0 0 0.15  0 0 0 0 0.06  0 0 0 0.45 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 100% 200px;
+  mix-blend-mode: multiply; opacity:.9;
+}
+.wood::after{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.32 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+  mix-blend-mode: multiply; opacity:.55;
+}
+.wood > *{ position: relative; z-index: 1; }
+
+.kicker{
+  font-family: var(--script);
+  font-weight: 700;
+  font-size: clamp(28px, 3vw, 40px);
+  color: var(--sun);
+  line-height: 1;
+  margin-bottom: 6px;
+  display: inline-block;
+}
+
+.btn{
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 14px 26px 12px;
+  background: var(--sun);
+  color: var(--paper);
+  border: none;
+  font-family: var(--display);
+  font-size: 18px;
+  text-transform: lowercase;
+  cursor: pointer;
+  border-radius: 999px;
+  box-shadow: 0 4px 0 var(--sun-2), 0 6px 14px rgba(26,55,65,.18);
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.btn:hover{
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--sun-2), 0 10px 18px rgba(26,55,65,.22);
+}
+.btn:active{ transform: translateY(2px); box-shadow: 0 1px 0 var(--sun-2); }
+.btn.alt{ background: var(--paper); color: var(--ink); box-shadow: 0 4px 0 var(--sand-2), 0 6px 14px rgba(26,55,65,.18); }
+.btn.alt:hover{ background: var(--sand-2); }
+.btn .arrow{ display:inline-block; transition: transform .2s ease; }
+.btn:hover .arrow{ transform: translateX(4px); }
+.btn-ghost{
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 12px 24px 10px;
+  background: transparent;
+  color: var(--paper);
+  border: 2px solid var(--paper);
+  border-radius: 999px;
+  font-family: var(--display);
+  font-size: 18px;
+  text-transform: lowercase;
+  cursor: pointer;
+  transition: background .2s ease, color .2s ease;
+}
+.btn-ghost:hover{ background: var(--paper); color: var(--ink); }
+
+[[nav.top](http://nav.top)](http://nav.top){
+  position: sticky; top: 0; z-index: 50;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px var(--gut);
+  background: var(--paper);
+  border-bottom: 2px solid var(--ink);
+}
+[[nav.top](http://nav.top)](http://nav.top) .wordmark{
+  font-family: var(--display);
+  font-size: 28px;
+  text-transform: lowercase;
+  display: inline-flex; align-items: baseline; gap: 2px;
+}
+[[nav.top](http://nav.top)](http://nav.top) .wordmark .dot{ color: var(--sun); }
+[[nav.top](http://nav.top)](http://nav.top) ul{ list-style:none; display:flex; gap:22px; margin:0; padding:0; }
+[[nav.top](http://nav.top)](http://nav.top) ul a{
+  font-family: var(--body); font-weight: 500;
+  font-size: 14px; text-transform: lowercase;
+  padding: 4px 0;
+}
+[[nav.top](http://nav.top)](http://nav.top) ul a:hover{ color: var(--sun); }
+[[nav.top](http://nav.top)](http://nav.top) .cta{
+  background: var(--sun); color: var(--paper);
+  padding: 8px 18px;
+  font-family: var(--display);
+  font-size: 16px;
+  border-radius: 999px;
+  text-transform: lowercase;
+  box-shadow: 0 3px 0 var(--sun-2);
+  transition: transform .2s ease;
+}
+[[nav.top](http://nav.top)](http://nav.top) .cta:hover{ transform: translateY(-1px); }
+@media (max-width: 880px){ [[nav.top](http://nav.top)](http://nav.top) ul{ display:none; } }
+
+.hero{
+  position: relative;
+  background: var(--tide);
+  color: var(--paper);
+  padding: clamp(40px, 7vw, 90px) var(--gut) 0;
+  overflow: hidden;
+  min-height: 92vh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+}
+.hero::before{
+  content:""; position:absolute;
+  top: -10%; right: -10%;
+  width: 70%; aspect-ratio: 1;
+  background: radial-gradient(circle, var(--sun) 0%, var(--sun-2) 35%, transparent 65%);
+  opacity: .45;
+  pointer-events: none;
+  filter: blur(20px);
+}
+.hero-grid{
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: center;
+  position: relative; z-index: 2;
+}
+.hero-copy h1{
+  font-family: var(--display);
+  font-size: clamp(64px, 11vw, 168px);
+  line-height: 0.85;
+  text-transform: lowercase;
+  margin: 8px 0 20px;
+  letter-spacing: -0.02em;
+}
+.hero-copy h1 .pop{ color: var(--sun); }
+.hero-copy .sub{
+  font-size: 18px;
+  max-width: 44ch;
+  margin: 0 0 32px;
+  color: rgba(248,241,222,.86);
+  line-height: 1.5;
+}
+.hero-cta{ display: flex; gap: 14px; flex-wrap: wrap; }
+
+.hero-art{
+  position: relative;
+  aspect-ratio: 1 / 1.05;
+  width: 100%;
+  max-width: 560px;
+  margin-left: auto;
+}
+.hero-art .sun-disc{
+  position: absolute;
+  top: 6%; right: 8%;
+  width: 56%; aspect-ratio: 1;
+  background: var(--sun);
+  border-radius: 50%;
+  box-shadow: 0 0 0 8px rgba(238,122,58,.18), 0 0 0 18px rgba(238,122,58,.10);
+  animation: bob 6s ease-in-out infinite;
+}
+@keyframes bob{ 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+.hero-art .palm{ position:absolute; left:-2%; bottom:10%; width:48%; z-index:2; }
+.hero-art .surfboard{ position:absolute; right:4%; bottom:8%; width:22%; z-index:2; transform:rotate(18deg); }
+.hero-art .marg{ position:absolute; left:38%; bottom:6%; width:24%; z-index:3; }
+.hero-art .cloud{ position:absolute; opacity:.85; }
+.hero-art .cloud.c1{ top:18%; left:8%; width:30%; animation: drift 14s ease-in-out infinite; }
+.hero-art .cloud.c2{ top:36%; right:0; width:22%; animation: drift 18s ease-in-out infinite reverse; }
+@keyframes drift{ 0%,100%{transform:translateX(0)} 50%{transform:translateX(14px)} }
+
+.hero-wave{
+  position: relative; z-index: 2;
+  margin: 20px calc(var(--gut) * -1) 0;
+  height: 60px;
+  display: block;
+  width: calc(100% + (var(--gut) * 2));
+}
+
+.ticker{
+  background: var(--ink);
+  color: var(--paper);
+  border-top: 2px solid var(--paper);
+  border-bottom: 2px solid var(--paper);
+  overflow: hidden;
+  padding: 14px 0;
+}
+.ticker-track{
+  display: inline-flex; gap: 38px;
+  white-space: nowrap;
+  animation: tick 32s linear infinite;
+  padding-left: 38px;
+  font-family: var(--display);
+  font-size: clamp(22px, 3vw, 36px);
+  text-transform: lowercase;
+}
+.ticker-track .star{ color: var(--sun); margin-right: 8px; }
+@keyframes tick{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+@media (max-width: 880px){
+  .hero-grid{ grid-template-columns: 1fr; }
+  .hero-art{ aspect-ratio: 1 / 0.8; max-width: 100%; }
+}
+
+section.block{ padding: clamp(60px, 9vw, 130px) var(--gut); position: relative; }
+[[section.block.center](http://section.block.center)](http://section.block.center){ text-align: center; }
+.block .kicker-row{ display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:20px; }
+.block.left .kicker-row{ align-items: flex-start; }
+.block h2{
+  font-family: var(--display);
+  font-size: clamp(54px, 9vw, 130px);
+  line-height: 0.86;
+  text-transform: lowercase;
+  letter-spacing: -0.02em;
+  margin: 0 0 24px;
+}
+.block h2 .pop{ color: var(--sun); }
+.block .body{
+  max-width: 56ch;
+  margin: 0 auto 32px;
+  font-size: 18px;
+  line-height: 1.55;
+}
+.block.left .body{ margin-left: 0; }
+
+.brands-wrap{
+  background: var(--paper);
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+.brands{
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  margin-top: 40px;
+}
+.brand-card{
+  background: var(--sand);
+  border-right: 2px solid var(--ink);
+  padding: 32px 28px;
+  display: flex; flex-direction: column;
+  min-height: 480px;
+  position: relative; overflow: hidden;
+  transition: background .25s ease;
+}
+.brand-card:last-child{ border-right: none; }
+.brand-card:hover{ background: var(--sand-2); }
+.brand-card .top{
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px; font-weight: 600; text-transform: lowercase;
+  margin-bottom: 14px;
+}
+.brand-card .pill{
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  background: var(--ink); color: var(--paper);
+  border-radius: 999px;
+  font-size: 11px; font-weight: 500;
+}
+.brand-card .pill .dot{ width:6px; height:6px; border-radius:50%; background: var(--lime); }
+.brand-card.coming .pill{ background: var(--sun); }
+.brand-card.coming .pill .dot{ background: var(--paper); }
+.brand-card .art{
+  height: 200px;
+  margin: 14px 0 24px;
+  display: flex; align-items: center; justify-content: center;
+}
+.brand-card .name{
+  font-family: var(--display);
+  font-size: clamp(40px, 5.4vw, 72px);
+  text-transform: lowercase;
+  line-height: 0.86;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+.brand-card .name .pop{ color: var(--sun); }
+.brand-card .desc{
+  font-size: 15px; line-height: 1.5;
+  margin: 0 0 18px;
+  max-width: 32ch;
+}
+.brand-card .meta{
+  margin-top: auto;
+  display: flex; justify-content: space-between; align-items: end;
+  font-size: 12px; font-weight: 500; text-transform: lowercase; color: var(--tide);
+  border-top: 2px dotted var(--ink);
+  padding-top: 14px;
+}
+.brand-card .meta .visit{
+  font-family: var(--display);
+  font-size: 16px;
+  color: var(--sun);
+}
+.brand-card .meta .visit:hover{ color: var(--ink); }
+
+@media (max-width: 880px){
+  .brands{ grid-template-columns: 1fr; }
+  .brand-card{ border-right: none; border-bottom: 2px solid var(--ink); min-height: 380px; }
+  .brand-card:last-child{ border-bottom: none; }
+}
+
+.loc-block{ padding: clamp(60px, 9vw, 120px) var(--gut); }
+.loc-block h2{ color: var(--paper); }
+.loc-block .body{ color: var(--paper); }
+.loc-block .kicker{ color: var(--sun-2); }
+
+.locs{
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+  margin-top: 50px;
+}
+.loc{
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  padding: 24px 24px 22px;
+  border-radius: 6px;
+  position: relative;
+  box-shadow: 6px 6px 0 var(--ink);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.loc:hover{
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--sun);
+}
+.loc .pin{
+  width: 40px; height: 40px;
+  background: var(--sun);
+  border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg);
+  position: absolute;
+  top: -18px; left: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--ink);
+}
+.loc .pin span{
+  transform: rotate(45deg);
+  color: var(--paper);
+  font-family: var(--display);
+  font-size: 14px;
+}
+.loc .city{
+  font-family: var(--display);
+  font-size: clamp(32px, 4vw, 48px);
+  line-height: 0.9;
+  text-transform: lowercase;
+  margin: 30px 0 8px;
+}
+.loc .city .pop{ color: var(--sun); }
+.loc .addr{ font-size: 14px; line-height: 1.45; margin: 0 0 14px; }
+.loc .stat{
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--lime);
+  padding: 4px 10px;
+  font-size: 12px; font-weight: 600; text-transform: lowercase;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink);
+  margin-bottom: 16px;
+}
+.loc.coming .stat{ background: var(--sun); color: var(--paper); }
+.loc .links{
+  display: flex; gap: 14px; flex-wrap: wrap;
+  border-top: 2px dotted var(--ink); padding-top: 14px; margin-top: 4px;
+}
+.loc .links a{ font-family: var(--display); font-size: 14px; color: var(--tide); }
+.loc .links a:hover{ color: var(--sun); }
+
+@media (max-width: 880px){ .locs{ grid-template-columns: 1fr; } }
+
+.founder-wrap{
+  background: var(--sand);
+  position: relative;
+  overflow: hidden;
+}
+.founder-wrap::before{
+  content:""; position:absolute;
+  top: 8%; right: -8%;
+  width: 38%; aspect-ratio: 1;
+  background: var(--sky);
+  border-radius: 50%;
+  opacity: .35;
+}
+.founder-grid{
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 5vw, 80px);
+  align-items: center;
+  margin-top: 30px;
+  position: relative; z-index: 2;
+}
+.founder-grid .avatar{
+  width: 100%;
+  aspect-ratio: 1 / 1.1;
+  background: var(--tide);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 8px 8px 0 var(--ink);
+}
+.founder-grid .avatar .sun-bg{
+  position: absolute;
+  top: 8%; right: 8%;
+  width: 46%; aspect-ratio: 1;
+  background: var(--sun);
+  border-radius: 50%;
+}
+.founder-grid .avatar .water{
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 35%;
+  background: linear-gradient(to top, var(--sky), transparent);
+}
+.founder-grid .avatar .label{
+  position: absolute; inset: auto 0 0 0;
+  padding: 16px 18px;
+  z-index: 2;
+  color: var(--paper);
+}
+.founder-grid .avatar .label .name{
+  font-family: var(--display);
+  font-size: clamp(34px, 4vw, 50px);
+  line-height: 0.9;
+  text-transform: lowercase;
+}
+.founder-grid .avatar .label small{
+  font-family: var(--script);
+  font-size: 22px;
+  color: var(--sun-2);
+  display: block;
+  margin-top: 4px;
+}
+.founder-grid blockquote{
+  margin: 0 0 24px;
+  font-family: var(--display);
+  font-size: clamp(28px, 3.6vw, 44px);
+  line-height: 1.05;
+  text-transform: lowercase;
+  letter-spacing: -0.01em;
+}
+.founder-grid blockquote .pop{ color: var(--sun); }
+.founder-grid .signature{
+  font-family: var(--script);
+  font-size: 56px;
+  color: var(--ink);
+  line-height: 1;
+  display: inline-block;
+  transform: rotate(-3deg);
+  margin-bottom: 8px;
+}
+.founder-grid .sigmeta{
+  font-size: 13px; font-weight: 500; color: var(--tide);
+}
+@media (max-width: 880px){ .founder-grid{ grid-template-columns: 1fr; } }
+
+.brewing-wrap{
+  background: var(--paper);
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+.brewing-cards{
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px;
+  margin-top: 40px;
+}
+.brew{
+  background: var(--sand);
+  border: 2px solid var(--ink);
+  border-radius: 6px;
+  padding: 24px;
+  box-shadow: 5px 5px 0 var(--ink);
+  transition: transform .25s ease, box-shadow .25s ease;
+}
+.brew:hover{
+  transform: translate(-2px, -2px);
+  box-shadow: 8px 8px 0 var(--sun);
+}
+.brew .tag{
+  display: inline-block;
+  font-family: var(--display);
+  font-size: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 5px 12px 3px;
+  border-radius: 999px;
+  text-transform: lowercase;
+  margin-bottom: 14px;
+}
+.brew .[[tag.live](http://tag.live)](http://tag.live){ background: var(--hibiscus); }
+.brew .tag.soon{ background: var(--sun); }
+.brew h3{
+  font-family: var(--display);
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 0.95;
+  text-transform: lowercase;
+  margin: 0 0 10px;
+}
+.brew p{ font-size: 14px; line-height: 1.5; margin: 0 0 14px; }
+.brew .when{ font-family: var(--script); font-size: 22px; color: var(--sun); }
+@media (max-width: 880px){ .brewing-cards{ grid-template-columns: 1fr; } }
+
+.join-wrap{
+  background: var(--tide);
+  color: var(--paper);
+  position: relative;
+  overflow: hidden;
+}
+.join-wrap::before{
+  content:""; position:absolute;
+  top: -20%; left: -10%;
+  width: 50%; aspect-ratio: 1;
+  background: radial-gradient(circle, var(--sun) 0%, transparent 65%);
+  opacity: .5;
+  pointer-events: none;
+}
+.join-wrap::after{
+  content:""; position:absolute;
+  bottom: -30%; right: -10%;
+  width: 60%; aspect-ratio: 1;
+  background: radial-gradient(circle, var(--sky) 0%, transparent 65%);
+  opacity: .4;
+  pointer-events: none;
+}
+.join-inner{ position: relative; z-index: 2; text-align: center; }
+.join-inner h2{ color: var(--paper); }
+.join-inner .body{ color: rgba(248,241,222,.86); }
+.join-form{
+  display: flex; gap: 8px; max-width: 480px;
+  margin: 8px auto 0;
+  background: var(--paper);
+  padding: 6px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  box-shadow: 4px 4px 0 var(--ink);
+}
+.join-form input{
+  flex: 1;
+  border: none; outline: none;
+  background: transparent;
+  font-family: var(--body); font-size: 15px;
+  padding: 8px 16px;
+  color: var(--ink);
+}
+.join-form input::placeholder{ color: rgba(26,55,65,.5); }
+.join-form button{
+  border: none;
+  background: var(--sun); color: var(--paper);
+  font-family: var(--display); font-size: 15px;
+  padding: 10px 22px 8px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+.join-form button:hover{ background: var(--ink); }
+
+footer{
+  background: var(--ink);
+  color: var(--paper);
+  padding: clamp(50px, 7vw, 90px) var(--gut) 30px;
+  position: relative;
+  overflow: hidden;
+}
+.foot-grid{
+  display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  border-top: 2px dotted rgba(248,241,222,.3);
+  padding-top: 40px;
+}
+.foot-grid h5{
+  font-family: var(--display);
+  font-size: 18px;
+  text-transform: lowercase;
+  margin: 0 0 14px;
+  color: var(--sun);
+}
+.foot-grid ul{ list-style: none; padding: 0; margin: 0; }
+.foot-grid ul li{ margin-bottom: 6px; font-size: 14px; }
+.foot-grid ul a:hover{ color: var(--sun); }
+.foot-mark{
+  font-family: var(--display);
+  font-size: clamp(48px, 6vw, 80px);
+  text-transform: lowercase;
+  line-height: 0.9;
+  margin-bottom: 12px;
+}
+.foot-mark .dot{ color: var(--sun); }
+.foot-bot{
+  margin-top: 50px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(248,241,222,.18);
+  display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  font-size: 12px; color: rgba(248,241,222,.6);
+}
+@media (max-width: 880px){
+  .foot-grid{ grid-template-columns: 1fr 1fr; }
+  .foot-grid > div:first-child{ grid-column: 1 / -1; }
+}
+
+.reveal{ opacity: 0; transform: translateY(24px); transition: opacity .9s ease, transform .9s ease; }
+.[[reveal.in](http://reveal.in)](http://reveal.in){ opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce){
+  .reveal{ opacity:1; transform:none; transition:none; }
+  .ticker-track{ animation: none; }
+  .hero-art .sun-disc, .hero-art .cloud{ animation: none; }
+}
+</style>
+</head>
+
+<body>
+
+<nav class="top">
+  <a href="#top" class="wordmark">swell<span class="dot">.</span>brands</a>
+  <ul>
+    <li><a href="#brands">brands</a></li>
+    <li><a href="#about">about</a></li>
+    <li><a href="#locations">locations</a></li>
+    <li><a href="#happenings">what's brewing</a></li>
+    <li><a href="#careers">careers</a></li>
+    <li><a href="#contact">contact</a></li>
+  </ul>
+  <a href="#join" class="cta">say hi!</a>
+</nav>
+
+
+<section class="hero" id="top">
+  <div class="hero-grid">
+    <div class="hero-copy">
+      <span class="kicker" style="color: var(--sun-2);">a house of brands</span>
+      <h1>raised by<br/>the <span class="pop">tide.</span></h1>
+      <p class="sub">swell brands is the parent company behind ditch, swell surf co., and what's coming next. hospitality and lifestyle brands, built on long island, with a california accent.</p>
+      <div class="hero-cta">
+        <a href="#brands" class="btn alt">meet the brands <span class="arrow">→</span></a>
+        <a href="#join" class="btn-ghost">say hi</a>
+      </div>
+    </div>
+
+    <div class="hero-art" aria-hidden="true">
+      <div class="sun-disc"></div>
+
+      <svg class="cloud c1" viewBox="0 0 120 50">
+        <ellipse cx="40" cy="32" rx="32" ry="14" fill="#f8f1de"/>
+        <ellipse cx="68" cy="28" rx="22" ry="18" fill="#f8f1de"/>
+        <ellipse cx="90" cy="34" rx="22" ry="12" fill="#f8f1de"/>
+      </svg>
+      <svg class="cloud c2" viewBox="0 0 120 50">
+        <ellipse cx="40" cy="32" rx="32" ry="14" fill="#f8f1de"/>
+        <ellipse cx="68" cy="28" rx="22" ry="18" fill="#f8f1de"/>
+      </svg>
+
+      <svg class="palm" viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">
+        <path d="M100 280 C95 230 88 160 92 90" stroke="#5a3414" stroke-width="14" fill="none" stroke-linecap="round"/>
+        <path d="M88 250 Q100 245 112 248" stroke="#3a2008" stroke-width="2" fill="none"/>
+        <path d="M85 220 Q100 215 110 218" stroke="#3a2008" stroke-width="2" fill="none"/>
+        <path d="M85 190 Q100 185 110 188" stroke="#3a2008" stroke-width="2" fill="none"/>
+        <path d="M86 160 Q100 156 112 158" stroke="#3a2008" stroke-width="2" fill="none"/>
+        <path d="M87 130 Q100 126 113 128" stroke="#3a2008" stroke-width="2" fill="none"/>
+        <circle cx="98" cy="92" r="7" fill="#5a3414"/>
+        <circle cx="108" cy="98" r="7" fill="#5a3414"/>
+        <path d="M92 90 Q60 60 20 50 Q55 70 76 92" fill="#1d4e58"/>
+        <path d="M92 90 Q120 50 180 40 Q140 70 108 92" fill="#1d4e58"/>
+        <path d="M92 90 Q80 40 50 10 Q85 50 90 88" fill="#2d6b78"/>
+        <path d="M92 90 Q105 40 140 5 Q110 55 100 90" fill="#2d6b78"/>
+        <path d="M92 90 Q40 88 0 110 Q60 95 86 96" fill="#1d4e58"/>
+        <path d="M92 90 Q150 90 200 110 Q140 95 110 96" fill="#1d4e58"/>
+      </svg>
+
+      <svg class="surfboard" viewBox="0 0 60 220" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="30" cy="110" rx="22" ry="106" fill="#f8f1de" stroke="#1a3741" stroke-width="3"/>
+        <line x1="30" y1="20" x2="30" y2="200" stroke="#ee7a3a" stroke-width="3"/>
+        <circle cx="30" cy="110" r="4" fill="#1a3741"/>
+        <path d="M22 195 Q30 220 38 195" fill="#ee7a3a" stroke="#1a3741" stroke-width="2"/>
+      </svg>
+
+      <svg class="marg" viewBox="0 0 120 180" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 30 L100 30 L70 100 L70 150 L88 160 L32 160 L50 150 L50 100 Z"
+              fill="#d9efe9" stroke="#1a3741" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M28 38 L92 38 L66 95 L54 95 Z" fill="#ee7a3a"/>
+        <path d="M20 30 L100 30" stroke="#f8f1de" stroke-width="6"/>
+        <path d="M22 30 L98 30" stroke="#1a3741" stroke-width="2" stroke-dasharray="2 3"/>
+        <circle cx="92" cy="28" r="11" fill="#d6dd6e" stroke="#1a3741" stroke-width="2.5"/>
+        <line x1="92" y1="18" x2="92" y2="38" stroke="#1a3741" stroke-width="1.5"/>
+        <line x1="82" y1="28" x2="102" y2="28" stroke="#1a3741" stroke-width="1.5"/>
+        <line x1="60" y1="20" x2="78" y2="80" stroke="#c83e3e" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <svg class="hero-wave" viewBox="0 0 1440 60" preserveAspectRatio="none">
+    <path d="M0,30 C180,55 360,5 540,30 C720,55 900,5 1080,30 C1260,55 1440,5 1440,30 L1440,60 L0,60 Z" fill="#f3e9d2"/>
+    <path d="M0,40 C180,65 360,15 540,40 C720,65 900,15 1080,40 C1260,65 1440,15 1440,40 L1440,60 L0,60 Z" fill="#f8f1de" opacity=".75"/>
+  </svg>
+</section>
+
+
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span><span class="star">★</span> california by way of long island</span>
+    <span><span class="star">★</span> est. 2024</span>
+    <span><span class="star">★</span> two locations &amp; counting</span>
+    <span><span class="star">★</span> hospitality with a saltwater accent</span>
+    <span><span class="star">★</span> brunch is brewing</span>
+    <span><span class="star">★</span> california by way of long island</span>
+    <span><span class="star">★</span> est. 2024</span>
+    <span><span class="star">★</span> two locations &amp; counting</span>
+    <span><span class="star">★</span> hospitality with a saltwater accent</span>
+    <span><span class="star">★</span> brunch is brewing</span>
+  </div>
+</div>
+
+
+<section class="block center reveal" id="about">
+  <div class="kicker-row">
+    <span class="kicker">what's the deal?</span>
+  </div>
+  <h2>a swell of <span class="pop">brands.</span></h2>
+  <p class="body">we build hospitality and lifestyle brands for people who'd rather be at the beach. restaurants worth the drive, clothing that smells faintly of sunscreen, and the occasional thing nobody asked for but everybody wanted. casual on the surface, serious underneath.</p>
+  <a href="#brands" class="btn">see what we've built <span class="arrow">→</span></a>
+</section>
+
+
+<section class="brands-wrap reveal" id="brands">
+  <div class="block center" style="padding-bottom: 0;">
+    <div class="kicker-row">
+      <span class="kicker">have you met</span>
+    </div>
+    <h2>our <span class="pop">brands?</span></h2>
+  </div>
+
+  <div class="brands">
+
+    <article class="brand-card">
+      <div class="top">
+        <span>01</span>
+        <span class="pill"><span class="dot"></span> open</span>
+      </div>
+      <div class="art">
+        <svg viewBox="0 0 220 180" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#ee7a3a" stroke-width="3" stroke-linecap="round">
+            <line x1="110" y1="14" x2="110" y2="36"/>
+            <line x1="60" y1="34" x2="76" y2="50"/>
+            <line x1="160" y1="34" x2="144" y2="50"/>
+            <line x1="40" y1="80" x2="60" y2="80"/>
+            <line x1="180" y1="80" x2="160" y2="80"/>
+          </g>
+          <circle cx="110" cy="80" r="36" fill="#ee7a3a" stroke="#1a3741" stroke-width="3"/>
+          <path d="M40 130 Q110 100 180 130 Q160 165 110 165 Q60 165 40 130 Z" fill="#f29a5b" stroke="#1a3741" stroke-width="3"/>
+          <path d="M52 130 Q110 110 168 130" stroke="#d6dd6e" stroke-width="6" fill="none" stroke-linecap="round"/>
+          <circle cx="80" cy="128" r="5" fill="#c83e3e"/>
+          <circle cx="120" cy="124" r="5" fill="#c83e3e"/>
+          <circle cx="150" cy="130" r="5" fill="#c83e3e"/>
+          <path d="M70 134 Q90 120 110 130" stroke="#1d4e58" stroke-width="4" fill="none"/>
+          <path d="M115 130 Q140 120 155 134" stroke="#1d4e58" stroke-width="4" fill="none"/>
+        </svg>
+      </div>
+      <div class="name">d<span class="pop">i</span>tch</div>
+      <p class="desc">california-style beach food. fresh-squeezed cocktails. laid-back hospitality. two locations on long island, with kings park on deck.</p>
+      <div class="meta">
+        <span>est. 2024 · bay shore + port jeff</span>
+        <a href="https://eatatditch.com" class="visit">visit →</a>
+      </div>
+    </article>
+
+    <article class="brand-card">
+      <div class="top">
+        <span>02</span>
+        <span class="pill"><span class="dot"></span> live</span>
+      </div>
+      <div class="art">
+        <svg viewBox="0 0 220 180" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 130 Q60 90 110 130 T210 130" stroke="#1d4e58" stroke-width="4" fill="none"/>
+          <path d="M10 145 Q60 105 110 145 T210 145" stroke="#6cabb6" stroke-width="3" fill="none"/>
+          <path d="M70 30 L100 30 Q110 50 130 30 L160 30 L180 60 L165 75 L155 70 L155 130 Q155 145 145 150 L85 150 Q75 145 75 130 L75 70 L65 75 L50 60 Z"
+                fill="#f8f1de" stroke="#1a3741" stroke-width="3" stroke-linejoin="round"/>
+          <text x="115" y="100" text-anchor="middle" font-family="Bagel Fat One, Impact" font-size="28" fill="#ee7a3a">swell</text>
+          <path d="M85 110 Q115 100 145 110" stroke="#1d4e58" stroke-width="2.5" fill="none"/>
+        </svg>
+      </div>
+      <div class="name">swell <span class="pop">surf</span> co.</div>
+      <p class="desc">tees, caps, and goods built for people who'd rather be at the beach. sold inside ditch and online. small batch, big vibes.</p>
+      <div class="meta">
+        <span>est. 2026 · direct + in-store</span>
+        <a href="#" class="visit">shop →</a>
+      </div>
+    </article>
+
+    <article class="brand-card coming">
+      <div class="top">
+        <span>03</span>
+        <span class="pill"><span class="dot"></span> coming q3</span>
+      </div>
+      <div class="art">
+        <svg viewBox="0 0 220 180" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="110" cy="120" rx="80" ry="14" fill="#1a3741"/>
+          <ellipse cx="110" cy="115" rx="80" ry="14" fill="#f8f1de" stroke="#1a3741" stroke-width="3"/>
+          <ellipse cx="110" cy="115" rx="62" ry="9" fill="#ebdfc1" stroke="#1a3741" stroke-width="1.5"/>
+          <ellipse cx="100" cy="98" rx="34" ry="20" fill="#f8f1de" stroke="#1a3741" stroke-width="3"/>
+          <ellipse cx="105" cy="95" rx="11" ry="9" fill="#ee7a3a" stroke="#1a3741" stroke-width="2.5"/>
+          <path d="M138 105 Q150 95 168 100 Q175 108 165 115 Q150 120 138 110 Z" fill="#c83e3e" stroke="#1a3741" stroke-width="2.5"/>
+          <path d="M62 112 Q70 100 82 105 Q88 115 78 120 Q66 122 62 112 Z" fill="#d6dd6e" stroke="#1a3741" stroke-width="2.5"/>
+          <path d="M80 70 Q85 60 80 50 Q75 40 80 30" stroke="#1a3741" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/>
+          <path d="M110 65 Q115 55 110 45 Q105 35 110 25" stroke="#1a3741" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/>
+          <path d="M140 68 Q145 58 140 48 Q135 38 140 28" stroke="#1a3741" stroke-width="2" fill="none" stroke-linecap="round" opacity=".6"/>
+        </svg>
+      </div>
+      <div class="name">brunch <span class="pop">tba</span></div>
+      <p class="desc">daily breakfast and brunch, opening in kings park late 2026. same dna, earlier shift. memorial day weekend previews coming first.</p>
+      <div class="meta">
+        <span>opening 2026 · kings park</span>
+        <a href="#join" class="visit">stay tuned →</a>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+
+<section class="wood loc-block reveal" id="locations">
+  <div class="block center" style="padding: 0;">
+    <div class="kicker-row">
+      <span class="kicker">where you'll</span>
+    </div>
+    <h2>find <span class="pop">us!</span></h2>
+    <p class="body">all on the same island, all run by the same crew, all serving the same kind of good time.</p>
+  </div>
+
+  <div class="locs">
+    <div class="loc">
+      <div class="pin"><span>1</span></div>
+      <div class="city">bay <span class="pop">shore</span></div>
+      <p class="addr">25 bayview avenue<br/>bay shore, ny 11706</p>
+      <span class="stat">open daily</span>
+      <div class="links">
+        <a href="https://www.google.com/maps/dir//25+Bayview+Ave,+Bay+Shore,+NY+11706">directions →</a>
+        <a href="https://eatatditch.com">visit ditch →</a>
+      </div>
+    </div>
+
+    <div class="loc">
+      <div class="pin"><span>2</span></div>
+      <div class="city">port <span class="pop">jeff</span></div>
+      <p class="addr">140 main street<br/>port jefferson, ny 11777</p>
+      <span class="stat">open daily</span>
+      <div class="links">
+        <a href="https://www.google.com/maps/dir//140+Main+St,+Port+Jefferson,+NY+11777">directions →</a>
+        <a href="https://eatatditch.com">visit ditch →</a>
+      </div>
+    </div>
+
+    <div class="loc coming">
+      <div class="pin" style="background:var(--lime)"><span style="color:var(--ink)">3</span></div>
+      <div class="city">kings <span class="pop">park</span></div>
+      <p class="addr">address forthcoming<br/>opening late q3 2026</p>
+      <span class="stat">coming soon!</span>
+      <div class="links">
+        <a href="#join">get on the list →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<section class="founder-wrap reveal">
+  <div class="block left" style="padding-bottom: 0; max-width: 1300px; margin: 0 auto;">
+    <div class="kicker-row">
+      <span class="kicker">from the deck</span>
+    </div>
+    <h2>meet <span class="pop">tracy.</span></h2>
+  </div>
+
+  <div class="founder-grid" style="padding: 0 var(--gut) clamp(60px, 9vw, 120px); max-width:1300px; margin: 0 auto;">
+    <div class="avatar">
+      <div class="sun-bg"></div>
+      <div class="water"></div>
+      <svg viewBox="0 0 300 340" style="position:absolute; inset:0; width:100%; height:100%;" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="150" cy="160" rx="58" ry="62" fill="#1a3741"/>
+        <path d="M70 320 Q150 230 230 320 Z" fill="#1a3741"/>
+        <rect x="106" y="148" width="34" height="14" rx="3" fill="#0a1c22"/>
+        <rect x="158" y="148" width="34" height="14" rx="3" fill="#0a1c22"/>
+        <line x1="140" y1="155" x2="158" y2="155" stroke="#0a1c22" stroke-width="3"/>
+      </svg>
+      <div class="label">
+        <div class="name">tracy smith</div>
+        <small>founder &amp; operator</small>
+      </div>
+    </div>
+
+    <div class="quote-area">
+      <span class="kicker">in her own words</span>
+      <blockquote>"i grew up between the bay and the break, and somewhere along the way realized nobody on this island was building the kind of restaurants i'd actually want to walk into. so we built one. then we built another. <span class="pop">we're not done.</span>"</blockquote>
+      <div class="signature">tracy</div>
+      <div class="sigmeta">tracy smith — founder &amp; operator, swell brands</div>
+    </div>
+  </div>
+</section>
+
+
+<section class="brewing-wrap reveal" id="happenings">
+  <div class="block center" style="padding-bottom: 0;">
+    <div class="kicker-row">
+      <span class="kicker">have you seen</span>
+    </div>
+    <h2>what's <span class="pop">brewing?</span></h2>
+    <p class="body">three locations, two brands, one brunch concept on the way. here's what's keeping us busy this season.</p>
+  </div>
+
+  <div class="brewing-cards" style="padding: 0 var(--gut) clamp(60px, 9vw, 120px); max-width: 1400px; margin: 0 auto;">
+    <div class="brew">
+      <span class="tag soon">opening 2026</span>
+      <h3>kings park is on the way.</h3>
+      <p>our third ditch location is in development, with a brunch-forward concept opening late q3 2026. daily breakfast service, same beachy dna.</p>
+      <div class="when">late q3 2026 →</div>
+    </div>
+
+    <div class="brew">
+      <span class="tag live">happening now</span>
+      <h3>brunch previews · memorial day.</h3>
+      <p>memorial day weekend brunch previews at both bay shore and port jeff, building toward a weekly sunday brunch pilot, 10am–3pm.</p>
+      <div class="when">may 2026 →</div>
+    </div>
+
+    <div class="brew">
+      <span class="tag">est. 2026</span>
+      <h3>swell surf co. dropped.</h3>
+      <p>our apparel brand is live. tees, caps, and a few surprises. sold inside ditch and online — built for people who'd rather be at the beach.</p>
+      <div class="when">shop now →</div>
+    </div>
+  </div>
+</section>
+
+
+<section class="join-wrap reveal" id="join">
+  <div class="block center join-inner">
+    <div class="kicker-row">
+      <span class="kicker">join the</span>
+    </div>
+    <h2><span class="pop">swell.</span></h2>
+    <p class="body">openings, partnerships, hiring news, and the occasional well-placed margarita reference. drop your email and we'll keep you in the loop.</p>
+    <form class="join-form" onsubmit="handleSubscribe(event)">
+      <input type="email" placeholder="your email" required name="email" />
+      <button type="submit">subscribe</button>
+    </form>
+    <p style="margin-top: 18px; font-size: 13px; color: rgba(248,241,222,.7);">no spam, no funny business. unsubscribe whenever.</p>
+  </div>
+</section>
+
+
+<section class="block center reveal" id="careers" style="background: var(--paper); border-bottom: 2px solid var(--ink);">
+  <div class="kicker-row">
+    <span class="kicker">come work with us</span>
+  </div>
+  <h2>join the <span class="pop">crew!</span></h2>
+  <p class="body">servers, bartenders, line cooks, brand people, and the occasional weirdo with a good idea. if you've got the right energy, we've got a shift.</p>
+  <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+    <a href="https://eatatditch.com/hiring" class="btn">see open roles <span class="arrow">→</span></a>
+    <a href="mailto:hello@swellbrands.co" class="btn alt">drop us a line</a>
+  </div>
+</section>
+
+
+<footer id="contact">
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom: 30px; flex-wrap: wrap; gap: 20px;">
+    <div class="foot-mark">swell<span class="dot">.</span>brands</div>
+    <p style="max-width: 36ch; font-size: 14px; color: rgba(248,241,222,.7); margin: 0;">a hospitality &amp; lifestyle company on long island. raised by the tide.</p>
+  </div>
+
+  <div class="foot-grid">
+    <div>
+      <h5>brands</h5>
+      <ul>
+        <li><a href="https://eatatditch.com">ditch</a></li>
+        <li><a href="#">swell surf co.</a></li>
+        <li><a href="#">brunch (coming)</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>company</h5>
+      <ul>
+        <li><a href="#about">about</a></li>
+        <li><a href="#happenings">what's brewing</a></li>
+        <li><a href="#careers">careers</a></li>
+        <li><a href="#">press kit</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5>locations</h5>
+      <ul>
+        <li>bay shore, ny</li>
+        <li>port jefferson, ny</li>
+        <li>kings park, ny <em style="color:var(--sun); font-style: normal;">soon</em></li>
+      </ul>
+    </div>
+    <div>
+      <h5>say hi!</h5>
+      <ul>
+        <li><a href="mailto:hello@swellbrands.co">hello@swellbrands.co</a></li>
+        <li><a href="mailto:press@swellbrands.co">press@swellbrands.co</a></li>
+        <li><a href="mailto:invest@swellbrands.co">invest@swellbrands.co</a></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="foot-bot">
+    <span>© 2026 swell brands · all rights reserved</span>
+    <span style="font-family: var(--script); font-size: 18px; color: var(--sun);">made on the south shore</span>
+    <span>40.79°n · 73.13°w</span>
+  </div>
+</footer>
+
+
+<!-- ============================================================== -->
+<!-- SUPABASE — newsletter signups                                  -->
+<!-- Replace the two values below with your project's credentials.  -->
+<!-- Both values are public-safe (RLS protects the data).           -->
+<!-- ============================================================== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL      = 'https://YOUR-PROJECT-ID.supabase.co';
+  const SUPABASE_ANON_KEY = 'YOUR-PUBLIC-ANON-KEY';
+
+  // only initialize if you've actually filled in the values
+  let sb = null;
+  if (window.supabase && !SUPABASE_URL.includes('YOUR-')) {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+
+  async function handleSubscribe(e){
+    e.preventDefault();
+    const form   = [[e.target](http://e.target)](http://e.target);
+    const input  = form.querySelector('input');
+    const button = form.querySelector('button');
+    const email  = input.value.trim().toLowerCase();
+    if (!email) return;
+
+    button.disabled    = true;
+    button.textContent = 'sending...';
+
+    // graceful fallback when supabase isn't wired up yet (e.g. local preview)
+    if (!sb){
+      setTimeout(() => {
+        input.value = '';
+        button.textContent = 'thanks!';
+        button.disabled = false;
+      }, 600);
+      return;
+    }
+
+    const { error } = await sb
+      .from('subscribers')
+      .insert([{ email, source: '[[swellbrands.co](http://swellbrands.co)](http://swellbrands.co)' }]);
+
+    // duplicate emails return an error — treat that as success
+    const isDup = error && /duplicate|unique/i.test(error.message);
+    if (error && !isDup){
+      console.error('supabase error:', error);
+      button.textContent = 'try again';
+      button.disabled = false;
+      return;
+    }
+
+    input.value = '';
+    button.textContent = 'thanks!';
+    setTimeout(() => {
+      button.textContent = 'subscribe';
+      button.disabled = false;
+    }, 3000);
+  }
+</script>
+
+<!-- scroll reveal -->
+<script>
+  const els = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting){
+        [[e.target](http://e.target)](http://e.target).classList.add('in');
+        io.unobserve([[e.target](http://e.target)](http://e.target));
+      }
+    });
+  }, { threshold: 0.10 });
+  els.forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>
