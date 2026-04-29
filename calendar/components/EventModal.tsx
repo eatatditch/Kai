@@ -34,6 +34,7 @@ type Props = {
   onClose: () => void;
   onSave: (event: CalendarEvent, recurrence: Recurrence) => void;
   onDelete: (id: string) => void;
+  onDeleteSeries: (seriesId: string) => void;
   onEdit: (event: CalendarEvent) => void;
   onCancelEdit: () => void;
 };
@@ -61,6 +62,7 @@ export function EventModal({
   onClose,
   onSave,
   onDelete,
+  onDeleteSeries,
   onEdit,
   onCancelEdit,
 }: Props) {
@@ -177,7 +179,24 @@ export function EventModal({
     onSave(ev, isEdit ? "none" : recurrence);
   };
 
+  const [confirmDelete, setConfirmDelete] = useState<CalendarEvent | null>(
+    null,
+  );
+
+  // Count the number of remaining occurrences in a series, for the confirm
+  // copy ("Delete entire series (12 events)").
+  const seriesCount = useMemo(() => {
+    if (!confirmDelete?.series_id) return 0;
+    return events.filter((e) => e.series_id === confirmDelete.series_id)
+      .length;
+  }, [events, confirmDelete]);
+
   const handleDelete = (ev: CalendarEvent) => {
+    if (ev.series_id) {
+      // Two-option flow handled inline below.
+      setConfirmDelete(ev);
+      return;
+    }
     if (!confirm(`Delete "${ev.title}"?`)) return;
     onDelete(ev.id);
   };
@@ -214,6 +233,52 @@ export function EventModal({
         </div>
 
         <div className="px-5 py-5">
+          {confirmDelete && (
+            <div className="mb-4 rounded-sm border-[1.5px] border-[var(--cat-event)] bg-[#f3d5cc]/40 px-4 py-3">
+              <h4 className="m-0 mb-1 font-bebas text-[15px] tracking-[0.1em] text-[#8a2c10]">
+                DELETE RECURRING EVENT
+              </h4>
+              <p className="m-0 mb-3 text-[13px] text-ink">
+                <span className="font-semibold">
+                  &ldquo;{confirmDelete.title}&rdquo;
+                </span>{" "}
+                is part of a series of {seriesCount} event
+                {seriesCount === 1 ? "" : "s"}. What do you want to delete?
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = confirmDelete.id;
+                    setConfirmDelete(null);
+                    onDelete(id);
+                  }}
+                  className="rounded-sm border-[1.5px] border-ink bg-white px-3 py-1.5 text-[12px] font-semibold text-ink transition-colors duration-150 hover:bg-sand"
+                >
+                  Just this event
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const seriesId = confirmDelete.series_id;
+                    setConfirmDelete(null);
+                    if (seriesId) onDeleteSeries(seriesId);
+                  }}
+                  className="rounded-sm border-[1.5px] border-[var(--cat-event)] bg-[var(--cat-event)] px-3 py-1.5 text-[12px] font-semibold text-white transition-colors duration-150 hover:bg-[#a23d18]"
+                >
+                  Delete entire series ({seriesCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(null)}
+                  className="ml-auto rounded-sm border border-line bg-white px-3 py-1.5 text-[12px] font-semibold text-muted transition-colors duration-150 hover:bg-sand"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
           {dayEvents.length > 0 && (
             <div className="mb-5">
               <h4 className="m-0 mb-2.5 font-bebas text-[15px] tracking-[0.12em] text-muted">
@@ -230,8 +295,19 @@ export function EventModal({
                     >
                       <div className="text-lg leading-none">{t.emoji}</div>
                       <div className="flex-1 overflow-hidden">
-                        <div className="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-ink">
-                          {ev.title}
+                        <div className="flex items-center gap-1 overflow-hidden">
+                          <span className="overflow-hidden text-ellipsis whitespace-nowrap text-sm font-semibold text-ink">
+                            {ev.title}
+                          </span>
+                          {ev.series_id && (
+                            <span
+                              title="Part of a recurring series"
+                              aria-label="Recurring"
+                              className="shrink-0 text-[11px] leading-none text-muted"
+                            >
+                              ↻
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
                           {meta}

@@ -8,7 +8,10 @@ type DbEvent = {
   title: string;
   time: string | null;
   notes: string | null;
+  series_id: string | null;
 };
+
+const EVENT_COLUMNS = "id, date, type, title, time, notes, series_id";
 
 function fromDb(row: DbEvent): CalendarEvent {
   return {
@@ -18,6 +21,7 @@ function fromDb(row: DbEvent): CalendarEvent {
     title: row.title,
     time: row.time ? row.time.slice(0, 5) : undefined,
     notes: row.notes ?? undefined,
+    series_id: row.series_id ?? undefined,
   };
 }
 
@@ -25,7 +29,7 @@ export async function fetchEvents(): Promise<CalendarEvent[]> {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("events")
-    .select("id, date, type, title, time, notes")
+    .select(EVENT_COLUMNS)
     .order("date", { ascending: true });
   if (error) throw error;
   return (data as DbEvent[]).map(fromDb);
@@ -42,11 +46,12 @@ export async function upsertEvent(
     title: event.title,
     time: event.time ?? null,
     notes: event.notes ?? null,
+    series_id: event.series_id ?? null,
   };
   const { data, error } = await supabase
     .from("events")
     .upsert(payload)
-    .select("id, date, type, title, time, notes")
+    .select(EVENT_COLUMNS)
     .single();
   if (error) throw error;
   return fromDb(data as DbEvent);
@@ -58,6 +63,15 @@ export async function deleteEventById(id: string): Promise<void> {
   if (error) throw error;
 }
 
+export async function deleteSeriesById(seriesId: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from("events")
+    .delete()
+    .eq("series_id", seriesId);
+  if (error) throw error;
+}
+
 function toDbPayload(e: CalendarEvent) {
   return {
     id: e.id,
@@ -66,6 +80,7 @@ function toDbPayload(e: CalendarEvent) {
     title: e.title,
     time: e.time ?? null,
     notes: e.notes ?? null,
+    series_id: e.series_id ?? null,
   };
 }
 

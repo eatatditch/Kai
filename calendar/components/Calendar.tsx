@@ -10,6 +10,7 @@ import {
   fetchEvents,
   upsertEvent,
   deleteEventById,
+  deleteSeriesById,
   subscribeEvents,
   mergeEvents,
   replaceAllEvents,
@@ -287,10 +288,12 @@ export function Calendar({ userEmail, isAdmin }: Props) {
 
     if (!isUpdate && recurrence !== "none") {
       const dates = generateOccurrenceDates(ev.date, recurrence);
+      const seriesId = crypto.randomUUID();
       const occurrences: CalendarEvent[] = dates.map((date, i) => ({
         ...ev,
         id: i === 0 ? ev.id : crypto.randomUUID(),
         date,
+        series_id: seriesId,
       }));
       setEvents((prev) => [...prev, ...occurrences]);
       setModal((prev) => (prev ? { date: ev.date, editId: null } : prev));
@@ -337,6 +340,32 @@ export function Calendar({ userEmail, isAdmin }: Props) {
 
     deleteEventById(id)
       .then(() => showToast("Event deleted"))
+      .catch(() => {
+        setEvents(snapshot);
+        showToast("Delete failed — restored");
+      });
+  };
+
+  const onDeleteSeries = (seriesId: string) => {
+    const snapshot = events;
+    const removedCount = events.filter((e) => e.series_id === seriesId).length;
+    setEvents((prev) => prev.filter((e) => e.series_id !== seriesId));
+    setModal((prev) => {
+      if (!prev) return prev;
+      const editing = prev.editId
+        ? snapshot.find((e) => e.id === prev.editId)
+        : null;
+      return editing && editing.series_id === seriesId
+        ? { date: prev.date, editId: null }
+        : prev;
+    });
+
+    deleteSeriesById(seriesId)
+      .then(() =>
+        showToast(
+          `Deleted ${removedCount} event${removedCount === 1 ? "" : "s"}`,
+        ),
+      )
       .catch(() => {
         setEvents(snapshot);
         showToast("Delete failed — restored");
@@ -530,6 +559,7 @@ export function Calendar({ userEmail, isAdmin }: Props) {
           onClose={() => setModal(null)}
           onSave={onSaveEvent}
           onDelete={onDeleteEvent}
+          onDeleteSeries={onDeleteSeries}
           onEdit={onEditEvent}
           onCancelEdit={onCancelEdit}
         />
