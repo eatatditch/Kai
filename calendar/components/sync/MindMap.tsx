@@ -129,14 +129,17 @@ export function MindMap({ meters, readings, roadmap }: Props) {
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // SVG layout: 920 x 360, center node in middle.
-  const W = 920;
+  // SVG layout: 960 x 360, center node in middle.
+  // leftX / rightX are the inner edges of the leaf rectangles, so the boxes
+  // (BRANCH_W wide) sit fully inside the viewBox.
+  const W = 960;
   const H = 360;
   const cx = W / 2;
   const cy = H / 2;
   const yPositions = [60, 140, 220, 300];
-  const leftX = 110;
-  const rightX = W - 110;
+  const BRANCH_W = 170;
+  const leftX = BRANCH_W + 20; // right edge of left leaf
+  const rightX = W - BRANCH_W - 20; // left edge of right leaf
 
   const leftBranches = branches.filter((b) => b.side === "left");
   const rightBranches = branches.filter((b) => b.side === "right");
