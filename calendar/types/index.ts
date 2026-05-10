@@ -59,3 +59,68 @@ export type Note = {
 };
 
 export type NoteFilterKey = NoteCategory | "all";
+
+// =============================================================================
+// Weekly Sync types
+// =============================================================================
+
+export type CadenceMeter = {
+  id: string;
+  slug: string;
+  name: string;
+  targetLabel: string;
+  maxValue: number;
+  sortOrder: number;
+};
+
+export type CadenceReading = {
+  id: string;
+  meterId: string;
+  isoYear: number;
+  isoWeek: number;
+  currentValue: number;
+};
+
+export type RoadmapStatus = "future" | "todo" | "mapping" | "mapped";
+
+export type RoadmapMonth = {
+  id: string;
+  monthStart: string;
+  quarter: string;
+  status: RoadmapStatus;
+  statusLabel: string;
+  deadlineText?: string;
+  notes?: string;
+};
+
+export type SyncOwner = "I" | "T" | "—";
+export type SyncBucket = "thisweek" | "radar";
+
+export type SyncItem = {
+  id: string;
+  bucket: SyncBucket;
+  body: string;
+  owner: SyncOwner;
+  done: boolean;
+  dueDate?: string;
+  sortOrder: number;
+  createdAt: string;
+  doneAt?: string;
+  isoYear: number;
+  isoWeek: number;
+};
+
+export type SyncSnapshot = {
+  id: string;
+  isoYear: number;
+  isoWeek: number;
+  payload: SyncSnapshotPayload;
+  createdAt: string;
+};
+
+export type SyncSnapshotPayload = {
+  meters: CadenceMeter[];
+  readings: CadenceReading[];
+  roadmap: RoadmapMonth[];
+  items: SyncItem[];
+};

@@ -1,7 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 
-export type AppShellSection = "calendar" | "notes" | "reports" | "scripts";
+export type AppShellSection =
+  | "calendar"
+  | "notes"
+  | "reports"
+  | "scripts"
+  | "sync";
 
 type Props = {
   userEmail: string;
@@ -17,6 +22,7 @@ type Props = {
 
 const NAV_LINKS: { id: AppShellSection; label: string; href: string }[] = [
   { id: "calendar", label: "Calendar", href: "/" },
+  { id: "sync", label: "Sync", href: "/sync" },
   { id: "scripts", label: "Scripts", href: "/scripts" },
   { id: "notes", label: "Notes", href: "/notes" },
   { id: "reports", label: "Reports", href: "/reports" },
