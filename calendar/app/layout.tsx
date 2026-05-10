@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, DM_Sans, Caveat } from "next/font/google";
+import { Bebas_Neue, DM_Sans, Caveat, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const bebas = Bebas_Neue({
@@ -23,6 +23,13 @@ const caveat = Caveat({
   display: "swap",
 });
 
+const mono = JetBrains_Mono({
+  variable: "--font-mono",
+  weight: ["400", "500", "600"],
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Ditch Content Calendar",
   description:
@@ -35,7 +42,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${bebas.variable} ${dm.variable} ${caveat.variable}`}
+      className={`${bebas.variable} ${dm.variable} ${caveat.variable} ${mono.variable}`}
     >
       <body>{children}</body>
     </html>
